@@ -1,0 +1,60 @@
+version: '3.8'
+
+services:
+  prometheus:
+    image: prom/prometheus:latest
+    ports:
+      - "9090:9090"
+    volumes:
+      - ./prometheus/prometheus.yml:/etc/prometheus/prometheus.yml
+      - prometheus_data:/prometheus
+    command:
+      - '--config.file=/etc/prometheus/prometheus.yml'
+      - '--storage.tsdb.path=/prometheus'
+      - '--web.console.libraries=/etc/prometheus/console_libraries'
+      - '--web.console.templates=/etc/prometheus/consoles'
+      - '--storage.tsdb.retention.time=200h'
+      - '--web.enable-lifecycle'
+
+  grafana:
+    image: grafana/grafana:latest
+    ports:
+      - "3000:3000"
+    environment:
+      - GF_SECURITY_ADMIN_PASSWORD=admin
+    volumes:
+      - grafana_data:/var/lib/grafana
+      - ./grafana/datasources:/etc/grafana/provisioning/datasources
+    depends_on:
+      - prometheus
+
+  gin-app:
+    build: ./apps/gin-app
+    ports:
+      - "8081:8080"
+    volumes:
+      - ./test-data:/app/data:ro
+    environment:
+      - GIN_MODE=release
+
+  fiber-app:
+    build: ./apps/fiber-app
+    ports:
+      - "8082:8080"
+    volumes:
+      - ./test-data:/app/data:ro
+
+  benchmark-runner:
+    build: ./benchmark
+    volumes:
+      - ./results:/app/results
+    depends_on:
+      - gin-app
+      - fiber-app
+    environment:
+      - GIN_URL=http://gin-app:8080
+      - FIBER_URL=http://fiber-app:8080
+
+volumes:
+  prometheus_data:
+  grafana_data:
