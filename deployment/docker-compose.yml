@@ -1,59 +1,89 @@
-version: '3.8'
-
 services:
-  prometheus:
-    image: prom/prometheus:latest
-    ports:
-      - "9090:9090"
-    volumes:
-      - ./prometheus/prometheus.yml:/etc/prometheus/prometheus.yml
-      - prometheus_data:/prometheus
-    command:
-      - '--config.file=/etc/prometheus/prometheus.yml'
-      - '--storage.tsdb.path=/prometheus'
-      - '--web.console.libraries=/etc/prometheus/console_libraries'
-      - '--web.console.templates=/etc/prometheus/consoles'
-      - '--storage.tsdb.retention.time=200h'
-      - '--web.enable-lifecycle'
-
-  grafana:
-    image: grafana/grafana:latest
-    ports:
-      - "3000:3000"
-    environment:
-      - GF_SECURITY_ADMIN_PASSWORD=admin
-    volumes:
-      - grafana_data:/var/lib/grafana
-      - ./grafana/datasources:/etc/grafana/provisioning/datasources
-    depends_on:
-      - prometheus
-
   gin-app:
-    build: ./apps/gin-app
+    hostname: apptest
+    build:
+      context: ../
+      dockerfile: ./cmd/gin_app/Dockerfile 
     ports:
-      - "8081:8080"
+      - "8081:8080" # 8081 - порт на хосте (вашей машине) 8080 - порт внутри контейнера
+      # компьютер -> 8081 -> 8080 -> приложение на порту 8080
     volumes:
-      - ./test-data:/app/data:ro
+      - ../test-data:/app/data:ro
+      - ../logs:/app/logs:rw  
     environment:
       - GIN_MODE=release
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:8080/health"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+    networks:
+      - test-network
 
   fiber-app:
+    hostname: apptest
     build: ./apps/fiber-app
     ports:
       - "8082:8080"
     volumes:
       - ./test-data:/app/data:ro
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:8080/health"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+    networks:
+      - test-network
 
-  benchmark-runner:
-    build: ./benchmark
+  prometheus:
+    container_name: test-prometheus
+    hostname: testprom
+    image: prom/prometheus:latest
     volumes:
-      - ./results:/app/results
-    depends_on:
-      - gin-app
-      - fiber-app
-    environment:
-      - GIN_URL=http://gin-app:8080
-      - FIBER_URL=http://fiber-app:8080
+      - ../config/prometheus.yml:/etc/prometheus/prometheus.yml:ro
+    ports:
+      - "9090:9090"
+    networks:
+      - test-network
+
+  # cadvisor-test:
+  #   image: gcr.io/cadvisor/cadvisor:latest
+  #   container_name: cadvisor-test
+  #   hostname: cadvisortest
+  #   ports:
+  #     - "8081:8080"
+  #   volumes:
+  #     - /:/rootfs:ro
+  #     - /var/run:/var/run:ro
+  #     - /sys:/sys:ro
+  #     - /var/lib/docker/:/var/lib/docker:ro
+      
+  # benchmark-runner:
+  #   build: ./benchmark
+  #   volumes:
+  #     - ./results:/app/results
+  #   depends_on:
+  #     - gin-app
+  #     - fiber-app
+  #   environment:
+  #     - GIN_URL=http://gin-app:8080
+  #     - FIBER_URL=http://fiber-app:8080
+
+  # grafana:
+  #   image: grafana/grafana:latest
+  #   ports:
+  #     - "3000:3000"
+  #   environment:
+  #     - GF_SECURITY_ADMIN_PASSWORD=admin
+  #   volumes:
+  #     - grafana_data:/var/lib/grafana
+  #     - ./grafana/datasources:/etc/grafana/provisioning/datasources
+  #   depends_on:
+  #     - prometheus
+
+networks:
+  test-network:
+    driver: bridge
 
 volumes:
   prometheus_data:
