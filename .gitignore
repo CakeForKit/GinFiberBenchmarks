@@ -1,4 +1,4 @@
-requests/ammo/*
+requests/ammo
 tmp
 *.drawio.bkp
 *:Zone.Identifier
