@@ -1,0 +1,41 @@
+pools:
+  - id: Flat-ramp-up
+    gun:
+      type: http
+      target: "localhost:8081"  # Ваш базовый URL
+    ammo:
+      type: http/json 
+      file: "./requests/ammo/flat_ammo.json"
+    result:
+      type: phout
+      destination: "./metrics_data/pandora_results/flat_results.phout"
+    discard_overflow: false
+    rps-per-instance: true
+    rps:
+      duration: 10s
+      type: const
+      ops: 1            # 1 запрос в секунду от КАЖДОГО пользователя
+    startup:
+      type: instance_step
+      from: 100           # начинаем со 100 виртуальных пользователей
+      to: 10000
+      step: 5000
+      stepduration: 1s
+
+
+      # type: step
+      # from: 100
+      # to: 10000
+      # step: 5000
+      # duration: 2s
+      # step_duration: 2s
+    # rps:
+    #   - duration: 20s
+    #     type: const
+    #     ops: 1            # 1 запрос в секунду от КАЖДОГО пользователя
+    # startup:
+    #   type: instance_step
+    #   from: 100           # начинаем со 100 виртуальных пользователей
+    #   to: 1000
+    #   step: 100
+    #   stepduration: 2s

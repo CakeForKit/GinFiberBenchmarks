@@ -5,11 +5,13 @@ import (
 	"fmt"
 	"log"
 	"os"
+	"path/filepath"
 
 	gendata "github.com/CakeForKit/GinFiberBenchmarks.git/internal/gen_data"
 )
 
 const (
+	DIR                     = "./requests/ammo/"
 	FLAT_AMMO_FILENAME      = "./requests/ammo/flat_ammo.json"
 	HEIRARCHY_AMMO_FILENAME = "./requests/ammo/hierarchy_ammo.json"
 	DEEP_AMMO_FILENAME      = "./requests/ammo/deep_ammo.json"
@@ -18,6 +20,10 @@ const (
 )
 
 func main() {
+	dir := filepath.Dir(DIR)
+	if err := os.MkdirAll(dir, 0755); err != nil {
+		log.Fatalf("Error creating directory %s: %v", dir, err)
+	}
 	{
 		flat_ammo, err := gendata.GenerateFlatAmmo(count_different_ammo)
 		if err != nil {

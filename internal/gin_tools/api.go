@@ -2,7 +2,6 @@ package gintools
 
 import (
 	"errors"
-	"io"
 
 	logmetrics "github.com/CakeForKit/GinFiberBenchmarks.git/internal/log_metrics"
 	"github.com/CakeForKit/GinFiberBenchmarks.git/internal/metrics"
@@ -12,8 +11,8 @@ import (
 )
 
 type MetricsRouter struct {
-	logger   logmetrics.MetricsLogger
-	fileLogs io.Writer
+	logger logmetrics.MetricsLogger
+	// fileLogs io.Writer
 }
 
 var (
@@ -21,10 +20,10 @@ var (
 	ErrRequestIDNotUUID  = errors.New("request_id is not a uuid")
 )
 
-func NewMetricsRouter(router *gin.RouterGroup, logger logmetrics.MetricsLogger, fileLogs io.Writer) MetricsRouter {
+func NewMetricsRouter(router *gin.RouterGroup, logger logmetrics.MetricsLogger) MetricsRouter {
 	r := MetricsRouter{
-		logger:   logger,
-		fileLogs: fileLogs,
+		logger: logger,
+		// fileLogs: fileLogs,
 	}
 	router.GET("/dump", r.DumpLogs)
 	router.GET("/metrics", gin.WrapH(metrics.GetHttpHandler()))
@@ -40,7 +39,7 @@ func NewMetricsRouter(router *gin.RouterGroup, logger logmetrics.MetricsLogger, 
 }
 
 func (r *MetricsRouter) DumpLogs(c *gin.Context) {
-	r.logger.DumpLogs(r.fileLogs)
+	r.logger.DumpLogs()
 }
 
 func (r *MetricsRouter) SerializeFlat(c *gin.Context) {

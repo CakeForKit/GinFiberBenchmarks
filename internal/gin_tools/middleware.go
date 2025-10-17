@@ -22,7 +22,7 @@ func MetricMiddleware(logger logmetrics.MetricsLogger, exceptPaths ...string) gi
 		metrics.TotalHttpRequestCounter.WithLabelValues(c.Request.Method, c.Request.URL.Path).Inc()
 
 		defer func() {
-			logger.SetResponseStatus(requestID, c.Writer.Status())
+			// logger.SetResponseStatus(requestID, c.Writer.Status())
 			metrics.ActiveHttpRequestCounter.WithLabelValues(c.Request.Method, c.Request.URL.Path).Dec()
 		}()
 

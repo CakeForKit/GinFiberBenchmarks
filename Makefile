@@ -13,13 +13,36 @@ down_gin_app:
 
 .PHONY: run_prom
 run_prom:
-# --no-cache
-# 	docker compose -v -f $(DC) build app_craftplace
 	docker compose -v -f $(DC) up --build prometheus -d
+
+.PHONY: down_all
+down_all:
+	docker compose -v -f $(DC) down -v
+
+.PHONY: pandora
+pandora:
+	pandora ./requests/pandora_config/flat_ramp_up.yaml
+
+.PHONY: dump_logs
+dump_logs:
+	curl http://localhost:8081/dump
 
 .PHONY: gen_ammo
 gen_ammo:
 	go run ./cmd/generate_data/main.go
-# 	pandora ./requests/pandora_config/flat_config.yaml
+
+.PHONY: active_py_venv
+active_py_venv:
+	source myenv/bin/activate
+
+.PHONY: deactivate_py_venv
+deactivate_py_venv:
+	deactivate
+
+.PHONY: graph
+graph:
+	. myenv/bin/activate && \
+	python3 ./analize/analize.py && \
+	deactivate
 
 

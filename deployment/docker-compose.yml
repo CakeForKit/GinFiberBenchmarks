@@ -8,8 +8,7 @@ services:
       - "8081:8080" # 8081 - порт на хосте (вашей машине) 8080 - порт внутри контейнера
       # компьютер -> 8081 -> 8080 -> приложение на порту 8080
     volumes:
-      - ../test-data:/app/data:ro
-      - ../logs:/app/logs:rw  
+      - ../metrics_data:/app/metrics_data:rw  
     environment:
       - GIN_MODE=release
     healthcheck:
@@ -25,8 +24,6 @@ services:
     build: ./apps/fiber-app
     ports:
       - "8082:8080"
-    volumes:
-      - ./test-data:/app/data:ro
     healthcheck:
       test: ["CMD", "curl", "-f", "http://localhost:8080/health"]
       interval: 30s

@@ -10,7 +10,7 @@ type Config struct {
 	// Measurements        int
 	// ConcurrentLevels    []int
 	MetricsUpdateTimeMS int
-	LogsFilename        string
+	// LogsFilename        string
 }
 
 // NewDefaultConfig создает конфигурацию по умолчанию
@@ -24,6 +24,6 @@ func NewDefaultConfig() *Config {
 		// Measurements:        100,
 		// ConcurrentLevels:    []int{1, 5, 10, 25, 50, 75, 100, 150, 200, 300},
 		MetricsUpdateTimeMS: 1000,
-		LogsFilename:        "/logs/metrics_log.json",
+		// LogsFilename:        "./metrics_data/logs/metrics_log.msgpack",
 	}
 }

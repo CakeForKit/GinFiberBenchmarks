@@ -1,6 +1,8 @@
 package gendata
 
-import "github.com/CakeForKit/GinFiberBenchmarks.git/internal/models"
+import (
+	"github.com/CakeForKit/GinFiberBenchmarks.git/internal/models"
+)
 
 func GenerateFlatAmmo(count int) ([]AmmoRequest, error) {
 	ammoRes := []AmmoRequest{}
@@ -16,8 +18,8 @@ func GenerateFlatAmmo(count int) ([]AmmoRequest, error) {
 				"Content-Type": "application/json",
 			},
 			Body: string(jsonData),
-			// Tag:  "flat_request_1",
-			URI: "/flat",
+			Tag:  "flat_request",
+			URI:  "/flat",
 		})
 	}
 	return ammoRes, nil
@@ -37,8 +39,8 @@ func GenerateFlatHierarchyAmmo(count int) ([]AmmoRequest, error) {
 				"Content-Type": "application/json",
 			},
 			Body: string(jsonData),
-			// Tag:  "flat_request_1",
-			URI: "/hierarchy",
+			Tag:  "hierarchy_request",
+			URI:  "/hierarchy",
 		})
 	}
 	return ammoRes, nil
@@ -58,8 +60,8 @@ func GenerateDeepAmmo(count, levelsInTree int) ([]AmmoRequest, error) {
 				"Content-Type": "application/json",
 			},
 			Body: string(jsonData),
-			// Tag:  "flat_request_1",
-			URI: "/deep",
+			Tag:  "deep_request",
+			URI:  "/deep",
 		})
 	}
 	return ammoRes, nil

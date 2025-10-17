@@ -2,8 +2,6 @@ package main
 
 import (
 	"fmt"
-	"os"
-	"path/filepath"
 
 	"github.com/CakeForKit/GinFiberBenchmarks.git/internal/cnfg"
 	gintools "github.com/CakeForKit/GinFiberBenchmarks.git/internal/gin_tools"
@@ -17,25 +15,12 @@ func main() {
 	metrics.RegisterMetricCollector(conf.MetricsUpdateTimeMS)
 	logger := logmetrics.NewLogger()
 
-	currentDir, err := os.Getwd()
-	if err != nil {
-		panic("Failed to get current directory: " + err.Error())
-	}
-	logsPath := filepath.Join(currentDir, conf.LogsFilename)
-	fmt.Printf("logsPath: %s\n\n", logsPath)
-
-	f, err := os.Create(logsPath)
-	if err != nil {
-		panic(err.Error())
-	}
-	defer f.Close()
-
 	engine := gin.New()
 	engine.Use(gin.Logger())
 	engine.Use(gin.Recovery())
 	engine.Use(gintools.MetricMiddleware(logger, "/metrics", "/dump"))
 	apiGroup := engine.Group("/")
-	mRouter := gintools.NewMetricsRouter(apiGroup, logger, f)
+	mRouter := gintools.NewMetricsRouter(apiGroup, logger)
 	_ = mRouter
 
 	engine.Run(fmt.Sprintf(":%d", conf.GinPort))

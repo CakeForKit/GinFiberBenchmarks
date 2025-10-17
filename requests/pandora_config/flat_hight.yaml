@@ -1,0 +1,20 @@
+pools:
+  - id: Flat hight
+    gun:
+      type: http
+      target: "localhost:8081"  # Ваш базовый URL
+    ammo:
+      type: http/json 
+      file: "./requests/ammo/flat_ammo.json"
+    result:
+      type: phout
+      destination: "./pandora_results/flat_results.phout"
+    discard_overflow: false # Клиенты ЖДУТ в очереди, если кассир не успевает
+    startup:
+      type: once
+      times: 1  # Выполнить весь ammo один раз (1 соединение)
+    rps:
+      - type: const
+        duration: 20s
+        ops: 10000  # 1 запрос в секунду  
+    
