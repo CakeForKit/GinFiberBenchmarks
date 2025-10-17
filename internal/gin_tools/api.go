@@ -11,8 +11,8 @@ import (
 )
 
 type MetricsRouter struct {
-	logger logmetrics.MetricsLogger
-	// fileLogs io.Writer
+	logger  logmetrics.MetricsLogger
+	logsDir string
 }
 
 var (
@@ -20,10 +20,10 @@ var (
 	ErrRequestIDNotUUID  = errors.New("request_id is not a uuid")
 )
 
-func NewMetricsRouter(router *gin.RouterGroup, logger logmetrics.MetricsLogger) MetricsRouter {
+func NewMetricsRouter(router *gin.RouterGroup, logger logmetrics.MetricsLogger, logsDir string) MetricsRouter {
 	r := MetricsRouter{
-		logger: logger,
-		// fileLogs: fileLogs,
+		logger:  logger,
+		logsDir: logsDir,
 	}
 	router.GET("/dump", r.DumpLogs)
 	router.GET("/metrics", gin.WrapH(metrics.GetHttpHandler()))
@@ -39,7 +39,7 @@ func NewMetricsRouter(router *gin.RouterGroup, logger logmetrics.MetricsLogger) 
 }
 
 func (r *MetricsRouter) DumpLogs(c *gin.Context) {
-	r.logger.DumpLogs()
+	r.logger.DumpLogs(r.logsDir)
 }
 
 func (r *MetricsRouter) SerializeFlat(c *gin.Context) {

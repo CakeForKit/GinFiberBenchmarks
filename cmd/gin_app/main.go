@@ -20,7 +20,7 @@ func main() {
 	engine.Use(gin.Recovery())
 	engine.Use(gintools.MetricMiddleware(logger, "/metrics", "/dump"))
 	apiGroup := engine.Group("/")
-	mRouter := gintools.NewMetricsRouter(apiGroup, logger)
+	mRouter := gintools.NewMetricsRouter(apiGroup, logger, conf.LogsDir)
 	_ = mRouter
 
 	engine.Run(fmt.Sprintf(":%d", conf.GinPort))

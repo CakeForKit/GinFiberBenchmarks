@@ -2,6 +2,9 @@ package logmetrics
 
 import (
 	"errors"
+	"fmt"
+	"path/filepath"
+	"strings"
 	"sync"
 	"time"
 
@@ -14,7 +17,7 @@ type MetricsLogger interface {
 	SetSerializeEndTime(requestID uuid.UUID) error
 	// SetResponseStatus(requestID uuid.UUID, status int) error
 	SetRequestPath(requestID uuid.UUID, path string) error
-	DumpLogs()
+	DumpLogs(logsDir string)
 }
 
 var (
@@ -62,20 +65,6 @@ func (l *loggerImpl) SetSerializeEndTime(requestID uuid.UUID) error {
 	return nil
 }
 
-// func (l *loggerImpl) SetResponseStatus(requestID uuid.UUID, status int) error {
-// 	obj, ok := l.logs.Load(requestID)
-// 	if !ok {
-// 		return ErrNotFound
-// 	}
-// 	serObj, ok := obj.(*SerializeLogObject)
-// 	if !ok {
-// 		return ErrType
-// 	}
-// 	serObj.ResponseStatus = status
-// 	l.logs.Store(requestID, serObj)
-// 	return nil
-// }
-
 func (l *loggerImpl) SetRequestPath(requestID uuid.UUID, path string) error {
 	obj, ok := l.logs.Load(requestID)
 	if !ok {
@@ -89,14 +78,19 @@ func (l *loggerImpl) SetRequestPath(requestID uuid.UUID, path string) error {
 	return nil
 }
 
-func (l *loggerImpl) DumpLogs() {
+func (l *loggerImpl) DumpLogs(logsDir string) {
 	var datalogs []SerializeMetric
 
+	path := ""
 	l.logs.Range(func(key, value interface{}) bool {
 		obj, ok := value.(*SerializeLogObject)
 		if !ok {
 			return true
 		}
+		if path != "" && path != obj.RequestPath {
+			panic(fmt.Sprintf("Смешение кучек в логе %s и %s", path, obj.RequestPath))
+		}
+		path = obj.RequestPath
 		toSave := SerializeMetric{
 			SerializeStartTime: obj.SerializeStartTime,
 			SerializeEndTime:   obj.SerializeEndTime,
@@ -106,34 +100,14 @@ func (l *loggerImpl) DumpLogs() {
 		return true
 	})
 	l.logs.Clear()
-	/*
-		enc := msgpack.NewEncoder(nil)
-		enc.SetCustomStructTag("msgpack")
-		enc.SetSortMapKeys(true)
 
-		bytes, err := msgpack.Marshal(datalogs)
-		if err != nil {
-			panic(err)
-		}
-		_, err = writer.Write(bytes)
-		if err != nil {
-			panic(err)
-		}
-	*/
-
-	if err := SaveStat("./metrics_data/graph_data/flat.txt", datalogs); err != nil {
+	path = strings.Replace(path, "/", "", -1)
+	logsPath := filepath.Join(logsDir, fmt.Sprintf("%s_%s", path, time.Now().Format("20060102_150405")))
+	// "./metrics_data/graph_data/flat.txt"
+	fmt.Printf("logsPath: %s\n\n", logsPath)
+	if err := SaveStat(logsPath, datalogs); err != nil {
 		panic(err)
 	}
-
-	// jsonBytes, err := json.MarshalIndent(datalogs, "", "  ")
-	// if err != nil {
-	// 	panic(err)
-	// }
-
-	// _, err = writer.Write(jsonBytes)
-	// if err != nil {
-	// 	panic(err)
-	// }
 }
 
 //	func (l *loggerImpl) DumpLogs(writer io.Writer) {

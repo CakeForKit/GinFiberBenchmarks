@@ -3,7 +3,7 @@ import pandas as pd
 from datetime import datetime, timedelta
 import numpy as np
 
-filename = "./graph_data/flat.txt"  # Замените на путь к вашему файлу
+filename = "./metrics_data/logs/flat_20251017_163859"  # Замените на путь к вашему файлу
 
 def parse_data_file(filename: str):
     """Парсинг файла с данными в формате timeStart duration"""
@@ -11,21 +11,17 @@ def parse_data_file(filename: str):
     durations_ms = []
     
     with open(filename, 'r') as f:
+        
+        print(f.readline())
         for line in f:
             line = line.strip()
-            if not line or 's' not in line:
+            if not line:
                 continue
                 
             parts = line.split()
             if len(parts) >= 2:
-                if parts[0].find("ms") != -1:
-                    time_start_str = parts[0].replace('ms', '')
-                    time_start_str *= 1000
-                else:
-                    time_start_str = parts[0].replace('s', '') 
-                if parts[1].find("µs") != -1:
-                    
-                duration_str = parts[1].replace('ms', '').replace('µs', '')  # Убираем единицы измерения
+                time_start_str = parts[0]
+                duration_str = parts[1]
                 
                 # Парсим timeStart (предполагаем, что это секунды от начала)
                 print(time_start_str)
@@ -137,10 +133,6 @@ def main():
     try:
         # Чтение и парсинг данных
         time_starts, durations_ms = parse_data_file(filename)
-        
-        if not time_starts:
-            print("Не удалось прочитать данные из файла")
-            return
         
         # Вывод статистики
         print_statistics(time_starts, durations_ms)
