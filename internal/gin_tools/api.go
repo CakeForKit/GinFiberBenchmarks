@@ -39,7 +39,9 @@ func NewMetricsRouter(router *gin.RouterGroup, logger logmetrics.MetricsLogger, 
 }
 
 func (r *MetricsRouter) DumpLogs(c *gin.Context) {
-	r.logger.DumpLogs(r.logsDir)
+	if err := r.logger.DumpLogs(r.logsDir); err != nil {
+		panic(err.Error())
+	}
 }
 
 func (r *MetricsRouter) SerializeFlat(c *gin.Context) {

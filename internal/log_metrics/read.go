@@ -10,6 +10,7 @@ import (
 )
 
 func SaveStat(fileNameToSave string, metrics []SerializeMetric) error {
+	fmt.Printf("fileNameToSave: %s\n\n", fileNameToSave)
 	sorted := make([]SerializeMetric, len(metrics))
 	copy(sorted, metrics)
 	sort.Slice(sorted, func(i, j int) bool {

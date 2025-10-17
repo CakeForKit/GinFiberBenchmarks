@@ -11,11 +11,11 @@ services:
       - ../metrics_data:/app/metrics_data:rw  
     environment:
       - GIN_MODE=release
-    healthcheck:
-      test: ["CMD", "curl", "-f", "http://localhost:8080/health"]
-      interval: 30s
-      timeout: 10s
-      retries: 3
+    # healthcheck:
+    #   test: ["CMD", "curl", "-f", "http://localhost:8080/health"]
+    #   interval: 30s
+    #   timeout: 10s
+    #   retries: 3
     networks:
       - test-network
 

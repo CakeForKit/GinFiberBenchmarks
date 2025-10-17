@@ -5,19 +5,19 @@ DC := ./deployment/docker-compose.yml
 .PHONY: run_gin_app
 run_gin_app:
 # --no-cache
-	docker compose -v -f $(DC) up --build gin-app -d
+	docker compose -f $(DC) up --build gin-app -d
 
 .PHONY: down_gin_app
 down_gin_app:
-	docker compose -v -f $(DC) down -v gin-app
+	docker compose -f $(DC) down -v gin-app
 
 .PHONY: run_prom
 run_prom:
-	docker compose -v -f $(DC) up --build prometheus -d
+	docker compose -f $(DC) up --build prometheus -d
 
 .PHONY: down_all
 down_all:
-	docker compose -v -f $(DC) down -v
+	docker compose -f $(DC) down -v
 
 .PHONY: pandora
 pandora:

@@ -1,47 +1,69 @@
 import matplotlib.pyplot as plt
 import pandas as pd
-from datetime import datetime, timedelta
 import numpy as np
+import os
 
-filename = "./metrics_data/logs/flat_20251017_163859"  # Замените на путь к вашему файлу
+# filename = "./metrics_data/logs/flat_20251017_163859"  # Замените на путь к вашему файлу
+directoryLogs = "./metrics_data/logs/"
+
+def parse_files_in_dir(directory):
+    med_time_duration_dict = dict()
+    for filename in os.listdir(directory):
+        filepath = os.path.join(directory, filename)
+        if os.path.isfile(filepath):
+            time_duration_dict = parse_data_file(filepath)
+            for k, v in time_duration_dict.items():
+                if k not in med_time_duration_dict:
+                    med_time_duration_dict[k] = [v]
+                else:
+                    med_time_duration_dict[k].append(v)
+    for k, v in med_time_duration_dict.items():
+        med_time_duration_dict[k] = sum(med_time_duration_dict[k]) / len(med_time_duration_dict[k])
+    
+    time_starts = list(sorted(med_time_duration_dict.keys()))
+    durations_ms = []
+    for ts in time_starts:
+        durations_ms.append(med_time_duration_dict[ts])
+    print(f"time_starts: [{min(time_starts)}, {max(time_starts)}]")
+    return time_starts, durations_ms
+            
 
 def parse_data_file(filename: str):
     """Парсинг файла с данными в формате timeStart duration"""
-    time_starts = []
-    durations_ms = []
-    
+    print(f"filename: {filename}")
+    lines = 0
+    time_duration_dict = dict()
     with open(filename, 'r') as f:
-        
-        print(f.readline())
+        f.readline()
+        line = f.readline().strip()
+        assert(line)
+        parts = line.split()
+        assert(len(parts) >= 2)
+        last_time_starts, last_durations = float(parts[0]), float(parts[1])
+        cnt_in_one = 1
         for line in f:
             line = line.strip()
-            if not line:
-                continue
-                
+            assert(line)
+
             parts = line.split()
-            if len(parts) >= 2:
-                time_start_str = parts[0]
-                duration_str = parts[1]
-                
-                # Парсим timeStart (предполагаем, что это секунды от начала)
-                print(time_start_str)
-                time_start_sec = float(time_start_str)
-                
-                # Парсим duration и конвертируем в миллисекунды
-                if 'µs' in parts[1]:
-                    duration_ms = float(duration_str) / 1000  # микросекунды в миллисекунды
-                else:
-                    duration_ms = float(duration_str)  # уже в миллисекундах
-                
-                time_starts.append(time_start_sec * 1000)  # конвертируем в миллисекунды
-                durations_ms.append(duration_ms)
-    
-    return time_starts, durations_ms
+            assert(len(parts) >= 2)
+
+            time_start, duration = float(parts[0]), float(parts[1])
+            if time_start == last_time_starts:
+                cnt_in_one += 1
+                last_durations += duration
+            else:
+                time_duration_dict[last_time_starts] = last_durations / cnt_in_one
+                cnt_in_one = 1
+                last_time_starts, last_durations = time_start, duration
+            lines += 1
+    print(f"lines = {lines}")
+    print(f"{min(time_duration_dict.keys())} - {max(time_duration_dict.keys())}")
+    return time_duration_dict
 
 def plot_time_series(time_starts, durations_ms, output_file):
     """Построение графика timeStart vs duration"""
     plt.figure(figsize=(12, 8))
-    
     # Создаем scatter plot
     plt.scatter(time_starts, durations_ms, alpha=0.6, s=20, color='blue', label='Измерения')
     
@@ -56,7 +78,7 @@ def plot_time_series(time_starts, durations_ms, output_file):
                 label=f'Скользящее среднее (окно={window_size})')
     
     plt.xlabel('Время начала (ms)', fontsize=12)
-    plt.ylabel('Длительность сериализации (ms)', fontsize=12)
+    plt.ylabel('Длительность сериализации (us)', fontsize=12)
     plt.title('Время сериализации vs Время начала операции', fontsize=14)
     plt.grid(True, alpha=0.3)
     plt.legend()
@@ -75,34 +97,6 @@ def plot_time_series(time_starts, durations_ms, output_file):
     if output_file:
         plt.savefig(output_file, dpi=300, bbox_inches='tight')
         print(f"График сохранен как {output_file}")
-    
-    plt.show()
-
-def plot_histogram(durations_ms, output_file):
-    """Построение гистограммы распределения длительностей"""
-    plt.figure(figsize=(10, 6))
-    
-    plt.hist(durations_ms, bins=50, alpha=0.7, color='green', edgecolor='black')
-    plt.xlabel('Длительность сериализации (ms)', fontsize=12)
-    plt.ylabel('Количество измерений', fontsize=12)
-    plt.title('Распределение длительностей сериализации', fontsize=14)
-    plt.grid(True, alpha=0.3)
-    
-    # Добавляем вертикальные линии для перцентилей
-    percentiles = [50, 75, 90, 95, 99]
-    colors = ['red', 'orange', 'yellow', 'purple', 'brown']
-    
-    for p, color in zip(percentiles, colors):
-        value = np.percentile(durations_ms, p)
-        plt.axvline(value, color=color, linestyle='--', alpha=0.8, 
-                   label=f'P{p}: {value:.3f}ms')
-    
-    plt.legend()
-    plt.tight_layout()
-    
-    if output_file:
-        plt.savefig(output_file, dpi=300, bbox_inches='tight')
-        print(f"Гистограмма сохранена как {output_file}")
     
     plt.show()
 
@@ -132,61 +126,22 @@ def print_statistics(time_starts, durations_ms):
 def main():
     try:
         # Чтение и парсинг данных
-        time_starts, durations_ms = parse_data_file(filename)
+        time_starts, durations_ms = parse_files_in_dir(directoryLogs)
+        # print(time_starts)
         
         # Вывод статистики
-        print_statistics(time_starts, durations_ms)
+        # print_statistics(time_starts, durations_ms)
         
         # Построение графиков
         plot_time_series(time_starts, durations_ms, "time_series_plot.png")
-        plot_histogram(durations_ms, "duration_histogram.png")
+        # plot_histogram(durations_ms, "duration_histogram.png")
         
     except FileNotFoundError:
-        print(f"Файл {filename} не найден")
+        print(f"Файл {directoryLogs}... не найден")
     except Exception as e:
         print(f"Ошибка: {e}")
         import traceback
         traceback.print_exc()
-
-# Альтернативная версия для данных в другом формате
-def parse_data_file_alternative(filename: str):
-    """Альтернативный парсер для разных форматов данных"""
-    time_starts = []
-    durations_ms = []
-    
-    with open(filename, 'r') as f:
-        for line_num, line in enumerate(f, 1):
-            line = line.strip()
-            if not line:
-                continue
-                
-            try:
-                # Пробуем разные разделители
-                for separator in [' ', '\t', ',', ';']:
-                    if separator in line:
-                        parts = line.split(separator)
-                        if len(parts) >= 2:
-                            # Убираем все не-цифровые символы кроме точки и минуса
-                            time_str = ''.join(c for c in parts[0] if c.isdigit() or c in '.-')
-                            duration_str = ''.join(c for c in parts[1] if c.isdigit() or c in '.-')
-                            
-                            time_start = float(time_str)
-                            duration = float(duration_str)
-                            
-                            # Автоопределение единиц измерения
-                            if 'µs' in line or 'us' in line or duration < 0.1:
-                                duration_ms = duration / 1000
-                            else:
-                                duration_ms = duration
-                            
-                            time_starts.append(time_start * 1000)  # в миллисекунды
-                            durations_ms.append(duration_ms)
-                            break
-            except ValueError as e:
-                print(f"Пропущена строка {line_num}: {line} (ошибка: {e})")
-                continue
-    
-    return time_starts, durations_ms
 
 if __name__ == "__main__":
     main()

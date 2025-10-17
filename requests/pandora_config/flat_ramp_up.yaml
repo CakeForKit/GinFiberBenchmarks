@@ -12,15 +12,15 @@ pools:
     discard_overflow: false
     rps-per-instance: true
     rps:
-      duration: 10s
+      duration: 20s
       type: const
-      ops: 1            # 1 запрос в секунду от КАЖДОГО пользователя
+      ops: 3            # 1 запрос в секунду от КАЖДОГО пользователя
     startup:
       type: instance_step
       from: 100           # начинаем со 100 виртуальных пользователей
       to: 10000
-      step: 5000
-      stepduration: 1s
+      step: 1000
+      stepduration: 2s
 
 
       # type: step

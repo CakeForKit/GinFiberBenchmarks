@@ -17,7 +17,7 @@ type MetricsLogger interface {
 	SetSerializeEndTime(requestID uuid.UUID) error
 	// SetResponseStatus(requestID uuid.UUID, status int) error
 	SetRequestPath(requestID uuid.UUID, path string) error
-	DumpLogs(logsDir string)
+	DumpLogs(logsDir string) error
 }
 
 var (
@@ -78,9 +78,9 @@ func (l *loggerImpl) SetRequestPath(requestID uuid.UUID, path string) error {
 	return nil
 }
 
-func (l *loggerImpl) DumpLogs(logsDir string) {
+func (l *loggerImpl) DumpLogs(logsDir string) (err error) {
 	var datalogs []SerializeMetric
-
+	err = nil
 	path := ""
 	l.logs.Range(func(key, value interface{}) bool {
 		obj, ok := value.(*SerializeLogObject)
@@ -88,7 +88,8 @@ func (l *loggerImpl) DumpLogs(logsDir string) {
 			return true
 		}
 		if path != "" && path != obj.RequestPath {
-			panic(fmt.Sprintf("Смешение кучек в логе %s и %s", path, obj.RequestPath))
+			err = fmt.Errorf("cмешение ручек в логе %s и %s", path, obj.RequestPath)
+			return true
 		}
 		path = obj.RequestPath
 		toSave := SerializeMetric{
@@ -99,6 +100,9 @@ func (l *loggerImpl) DumpLogs(logsDir string) {
 		datalogs = append(datalogs, toSave)
 		return true
 	})
+	if err != nil {
+		return err
+	}
 	l.logs.Clear()
 
 	path = strings.Replace(path, "/", "", -1)
@@ -106,8 +110,9 @@ func (l *loggerImpl) DumpLogs(logsDir string) {
 	// "./metrics_data/graph_data/flat.txt"
 	fmt.Printf("logsPath: %s\n\n", logsPath)
 	if err := SaveStat(logsPath, datalogs); err != nil {
-		panic(err)
+		return err
 	}
+	return
 }
 
 //	func (l *loggerImpl) DumpLogs(writer io.Writer) {

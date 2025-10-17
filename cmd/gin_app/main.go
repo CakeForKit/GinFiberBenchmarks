@@ -16,7 +16,7 @@ func main() {
 	logger := logmetrics.NewLogger()
 
 	engine := gin.New()
-	engine.Use(gin.Logger())
+	// engine.Use(gin.Logger())
 	engine.Use(gin.Recovery())
 	engine.Use(gintools.MetricMiddleware(logger, "/metrics", "/dump"))
 	apiGroup := engine.Group("/")
