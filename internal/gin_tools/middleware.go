@@ -18,13 +18,13 @@ func MetricMiddleware(logger logmetrics.MetricsLogger, exceptPaths ...string) gi
 		logger.SetRequestPath(requestID, c.Request.URL.Path)
 		c.Set("request_id", requestID)
 
-		metrics.ActiveHttpRequestCounter.WithLabelValues(c.Request.Method, c.Request.URL.Path).Inc()
+		// metrics.ActiveHttpRequestCounter.WithLabelValues(c.Request.Method, c.Request.URL.Path).Inc()
 		metrics.TotalHttpRequestCounter.WithLabelValues(c.Request.Method, c.Request.URL.Path).Inc()
 
-		defer func() {
-			// logger.SetResponseStatus(requestID, c.Writer.Status())
-			metrics.ActiveHttpRequestCounter.WithLabelValues(c.Request.Method, c.Request.URL.Path).Dec()
-		}()
+		// defer func() {
+		// 	// logger.SetResponseStatus(requestID, c.Writer.Status())
+		// 	metrics.ActiveHttpRequestCounter.WithLabelValues(c.Request.Method, c.Request.URL.Path).Dec()
+		// }()
 
 		c.Next()
 	}

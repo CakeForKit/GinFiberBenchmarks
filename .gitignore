@@ -1,5 +1,6 @@
 requests/ammo
 metrics_data
+prometheus-export
 myenv
 tmp
 *.drawio.bkp

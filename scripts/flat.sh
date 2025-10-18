@@ -11,14 +11,19 @@ cd "$(dirname "$0")/.."
 # make dump_logs
 
 # rm -rf ./metrics_data/save/*
-for i in {6..10}
+for i in {1..1}
 do
     docker compose -f ./deployment/docker-compose.yml stop gin-app
     docker compose -f ./deployment/docker-compose.yml start gin-app
+    
     sleep 1
+    start=$(date -u +%Y-%m-%dT%H:%M:%SZ)    # В RFC3339 формате
     make pandora
+    
     make dump_logs
     mkdir "./metrics_data/save/${i}"
     mv ./metrics_data/logs/flat_logs.txt "./metrics_data/save/${i}"
     mv ./metrics_data/pandora_results/flat_results.phout "./metrics_data/save/${i}"
+    end=$(date -u +%Y-%m-%dT%H:%M:%SZ)
+    go run ./cmd/export_prom/main.go -start="$start" -end="$end"
 done

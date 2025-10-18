@@ -12,13 +12,13 @@ import (
 var (
 	Gatherer = prometheus.NewRegistry()
 	// отслеживает количество currently выполняющихся HTTP-запросов
-	ActiveHttpRequestCounter = prometheus.NewGaugeVec(
-		prometheus.GaugeOpts{
-			Name: "active_http_request_counter",
-			Help: "The number of active http requests",
-		},
-		[]string{"method", "path"},
-	)
+	// ActiveHttpRequestCounter = prometheus.NewGaugeVec(
+	// 	prometheus.GaugeOpts{
+	// 		Name: "active_http_request_counter",
+	// 		Help: "The number of active http requests",
+	// 	},
+	// 	[]string{"method", "path"},
+	// )
 	// подсчитывает общее количество обработанных HTTP-запросов
 	TotalHttpRequestCounter = prometheus.NewCounterVec(
 		prometheus.CounterOpts{
@@ -40,7 +40,7 @@ var (
 )
 
 func RegisterMetricCollector(sleepMs int) {
-	Gatherer.MustRegister(ActiveHttpRequestCounter)
+	// Gatherer.MustRegister(ActiveHttpRequestCounter)
 	Gatherer.MustRegister(TotalHttpRequestCounter)
 	Gatherer.MustRegister(GoroutinesCount)
 	Gatherer.MustRegister(MemoryAllocations)
