@@ -106,7 +106,9 @@ func (l *loggerImpl) DumpLogs(logsDir string) (err error) {
 	l.logs.Clear()
 
 	path = strings.Replace(path, "/", "", -1)
-	logsPath := filepath.Join(logsDir, fmt.Sprintf("%s_%s", path, time.Now().Format("20060102_150405")))
+	// logsPath := filepath.Join(logsDir, fmt.Sprintf("%s_%s", path, time.Now().Format("20060102_150405")))
+	logsPath := filepath.Join(logsDir, fmt.Sprintf("%s_logs.txt", path))
+
 	// "./metrics_data/graph_data/flat.txt"
 	fmt.Printf("logsPath: %s\n\n", logsPath)
 	if err := SaveStat(logsPath, datalogs); err != nil {

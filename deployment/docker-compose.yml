@@ -16,6 +16,14 @@ services:
     #   interval: 30s
     #   timeout: 10s
     #   retries: 3
+    deploy:
+      resources:
+        limits:
+          cpus: "1.0"        
+          memory: 1g         
+    cpuset: "2"              
+    mem_limit: 1g            
+    memswap_limit: 1g
     networks:
       - test-network
 
@@ -81,6 +89,7 @@ services:
 networks:
   test-network:
     driver: bridge
+    name: test-network
 
 volumes:
   prometheus_data:

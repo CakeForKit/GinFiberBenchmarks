@@ -10,11 +10,15 @@ cd "$(dirname "$0")/.."
 # make pandora
 # make dump_logs
 
-for i in {1..10}
+# rm -rf ./metrics_data/save/*
+for i in {6..10}
 do
     docker compose -f ./deployment/docker-compose.yml stop gin-app
     docker compose -f ./deployment/docker-compose.yml start gin-app
     sleep 1
     make pandora
     make dump_logs
+    mkdir "./metrics_data/save/${i}"
+    mv ./metrics_data/logs/flat_logs.txt "./metrics_data/save/${i}"
+    mv ./metrics_data/pandora_results/flat_results.phout "./metrics_data/save/${i}"
 done

@@ -1,4 +1,6 @@
 requests/ammo
+metrics_data
+myenv
 tmp
 *.drawio.bkp
 *:Zone.Identifier
