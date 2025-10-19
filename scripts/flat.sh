@@ -8,7 +8,7 @@ cd "$(dirname "$0")/.."
 # make run_gin_app 
 # sleep 2
 # make pandora
-# make dump_logs
+# make dump_logs 
 
 # rm -rf ./metrics_data/save/*
 for i in {1..1}

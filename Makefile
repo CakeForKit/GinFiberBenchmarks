@@ -13,11 +13,23 @@ down_gin_app:
 
 .PHONY: run_prom
 run_prom:
-	docker compose -f $(DC) up --build prometheus -d
+	docker compose -f $(DC) up --build prometheus -d 
 
-.PHONY: down_all
-down_all:
-	docker compose -f $(DC) down -v
+.PHONY: down_prom
+down_prom:
+	docker compose -f $(DC) down -v prometheus
+
+.PHONY: run_cad
+run_cad:
+	docker compose -f $(DC) up --build cadvisortest -d
+
+.PHONY: down_cad
+down_cad:
+	docker compose -f $(DC) down -v cadvisortest
+
+.PHONY: stop_all
+stop_all:
+	docker compose -f $(DC) stop
 
 .PHONY: pandora
 pandora:
@@ -25,19 +37,11 @@ pandora:
 
 .PHONY: dump_logs
 dump_logs:
-	curl http://localhost:8081/dump
+	curl http://localhost:8080/dump
 
 .PHONY: gen_ammo
 gen_ammo:
 	go run ./cmd/generate_data/main.go
-
-.PHONY: active_py_venv
-active_py_venv:
-	source myenv/bin/activate
-
-.PHONY: deactivate_py_venv
-deactivate_py_venv:
-	deactivate
 
 .PHONY: graph
 graph:

@@ -23,10 +23,20 @@ const (
 	total_http_request_counter = "total_http_request_counter"
 	memory_allocations_bytes   = "memory_allocations_bytes"
 	goroutines_count           = "goroutines_count"
+
+	// timestamp секнды загрузка процессора в процентах
+	container_cpu_usage_seconds_total = "rate(container_cpu_usage_seconds_total{name=\"deployment-gin-app-1\"}[1m])*100"
+	// timestamp байты (екущее использование памяти в байтах
+	container_memory_usage_bytes = "container_memory_usage_bytes{name=\"deployment-gin-app-1\"}"
+	// container_fs_reads_bytes_total = "container_fs_reads_bytes_total{name=\"deployment-gin-app-1\"} "
 )
 
+var save_json = true
+
 var (
-	metrics_save = []string{total_http_request_counter, memory_allocations_bytes, goroutines_count}
+	metrics_save = []string{
+		total_http_request_counter, memory_allocations_bytes, goroutines_count,
+		container_cpu_usage_seconds_total, container_memory_usage_bytes}
 )
 
 type PrometheusExporter struct {
@@ -139,21 +149,42 @@ func (p *PrometheusExporter) SanitizeFilename(filename string) string {
 	return strings.Trim(safeName, "_")
 }
 
-func parseValues(vals [][]interface{}) [][]int {
-	resultVals := [][]int{}
+type metric struct {
+	Timestamp int
+	Val       float64
+}
+
+func parseFloatVals(vals [][]interface{}) []metric {
+	resultVals := []metric{}
 	for _, v := range vals {
 		timestamp := int(v[0].(float64))
 
-		metricVal, err := strconv.Atoi(v[1].(string))
+		// metricVal, err := strconv.Atoi(v[1].(string))
+		metricVal, err := strconv.ParseFloat(v[1].(string), 64)
 		if err != nil {
 			panic(err)
 		}
-		resultVals = append(resultVals, []int{timestamp, metricVal})
+		resultVals = append(resultVals, metric{Timestamp: timestamp, Val: metricVal})
 	}
 	return resultVals
 }
 
+// func parseValues(vals [][]interface{}) []metric {
+// 	resultVals := [][]int{}
+// 	for _, v := range vals {
+// 		timestamp := int(v[0].(float64))
+
+// 		metricVal, err := strconv.Atoi(v[1].(string))
+// 		if err != nil {
+// 			panic(err)
+// 		}
+// 		resultVals = append(resultVals, metric{Timestamp: timestamp, Val: metricVal})
+// 	}
+// 	return resultVals
+// }
+
 func saveMetrics(queryResponse PrometheusQueryRangeResponse, metricName string) error {
+	var resultVals []metric
 	if metricName == memory_allocations_bytes {
 		for i := range 2 {
 			filename := fmt.Sprintf("./metrics_data/prometheus/%s_%s.txt", metricName, queryResponse.Data.Result[i].Metric["type"])
@@ -166,9 +197,9 @@ func saveMetrics(queryResponse PrometheusQueryRangeResponse, metricName string) 
 			defer file.Close()
 
 			vals := queryResponse.Data.Result[i].Values
-			resultVals := parseValues(vals)
+			resultVals = parseFloatVals(vals)
 			for _, v := range resultVals {
-				file.WriteString(fmt.Sprintf("%d %d\n", v[0], v[1]))
+				file.WriteString(fmt.Sprintf("%d %.2f\n", v.Timestamp, v.Val))
 			}
 		}
 	} else {
@@ -180,9 +211,9 @@ func saveMetrics(queryResponse PrometheusQueryRangeResponse, metricName string) 
 		defer file.Close()
 
 		vals := queryResponse.Data.Result[0].Values
-		resultVals := parseValues(vals)
+		resultVals = parseFloatVals(vals)
 		for _, v := range resultVals {
-			file.WriteString(fmt.Sprintf("%d %d\n", v[0], v[1]))
+			file.WriteString(fmt.Sprintf("%d %.2f\n", v.Timestamp, v.Val))
 		}
 	}
 	return nil
@@ -247,13 +278,8 @@ func (p *PrometheusExporter) ExportMetric(metricName string) *ExportResult {
 		return result
 	}
 
-	err = saveMetrics(queryResponse, metricName)
-	if err != nil {
-		result.Message = fmt.Sprintf("Error: %v", err)
-		return result
-	}
 	// Сохраняем в файл json
-	/*
+	if save_json {
 		file, err := os.Create(fmt.Sprintf("./prometheus-export/%s.json", metricName))
 		if err != nil {
 			result.Message = fmt.Sprintf("❌ Failed to create file for %s: %v", metricName, err)
@@ -267,7 +293,12 @@ func (p *PrometheusExporter) ExportMetric(metricName string) *ExportResult {
 			result.Message = fmt.Sprintf("❌ Failed to write file for %s: %v", metricName, err)
 			return result
 		}
-	*/
+	}
+	err = saveMetrics(queryResponse, metricName)
+	if err != nil {
+		result.Message = fmt.Sprintf("Error: %v", err)
+		return result
+	}
 	result.Success = true
 	result.HasData = true
 	result.SeriesCount = len(queryResponse.Data.Result)

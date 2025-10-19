@@ -5,8 +5,7 @@ services:
       context: ../
       dockerfile: ./cmd/gin_app/Dockerfile 
     ports:
-      - "8081:8080" # 8081 - порт на хосте (вашей машине) 8080 - порт внутри контейнера
-      # компьютер -> 8081 -> 8080 -> приложение на порту 8080
+      - "8080:8080" 
     volumes:
       - ../metrics_data:/app/metrics_data:rw  
     environment:
@@ -14,7 +13,7 @@ services:
     deploy:
       resources:
         limits:
-          cpus: "4.0"        
+          cpus: "1.0"        
           memory: 1g         
     networks:
       - test-network
@@ -23,7 +22,7 @@ services:
     hostname: apptest
     build: ./apps/fiber-app
     ports:
-      - "8082:8080"
+      - "8080:8080"
     healthcheck:
       test: ["CMD", "curl", "-f", "http://localhost:8080/health"]
       interval: 30s
@@ -43,20 +42,32 @@ services:
     networks:
       - test-network
 
-  # cadvisor-test:
-  #   image: gcr.io/cadvisor/cadvisor:latest
-  #   container_name: cadvisor-test
-  #   hostname: cadvisortest
-  #   ports:
-  #     - "8081:8080"
-  #   volumes:
-  #     - /:/rootfs:ro
-  #     - /var/run:/var/run:ro
-  #     - /sys:/sys:ro
-  #     - /var/lib/docker/:/var/lib/docker:ro
+  cadvisortest:
+    image: gcr.io/cadvisor/cadvisor:latest
+    container_name: cadvisortest
+    hostname: cadvisortest
+    ports:
+      - "8081:8080" # 8081 - порт на хосте (вашей машине) 8080 - порт внутри контейнера
+      # компьютер -> 8081 -> 8080 -> приложение на порту 8080
+    privileged: true
+    devices:
+      - /dev/kmsg:/dev/kmsg
+    volumes:
+      - /:/rootfs:ro
+      - /var/run:/var/run:rw
+      - /sys:/sys:ro
+      # - /var/lib/docker:/var/lib/docker:ro
+      - /dev/disk/:/dev/disk:ro
+      - /etc/machine-id:/etc/machine-id:ro
+      # - /mnt/windows_docker/:/rootfs/var/lib/docker:ro # особенность wsl
+      - /mnt/windows_docker:/var/lib/docker:ro
+      - /mnt/windows_docker:/rootfs/var/lib/docker:ro
+    networks:
+      - test-network
+
       
   # benchmark-runner:
-  #   build: ./benchmark
+  #   build: ./benchmark 
   #   volumes:
   #     - ./results:/app/results
   #   depends_on:

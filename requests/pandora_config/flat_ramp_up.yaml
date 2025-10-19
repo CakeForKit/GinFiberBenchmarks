@@ -2,7 +2,7 @@ pools:
   - id: Flat-ramp-up
     gun:
       type: http
-      target: "localhost:8081"  # Ваш базовый URL
+      target: "localhost:8080"  # Ваш базовый URL
     ammo:
       type: http/json 
       file: "./requests/ammo/flat_ammo.json"
@@ -13,14 +13,14 @@ pools:
     rps-per-instance: true
     rps:
       type: const
-      duration: 20s
+      duration: 10s
       ops: 3
 
     startup:
       type: instance_step
       from: 100
       to: 1000
-      step: 100
+      step: 1000
       stepduration: 2s
     # rps:
     #   duration: 20s
