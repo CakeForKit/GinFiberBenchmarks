@@ -11,8 +11,8 @@ import (
 )
 
 type MetricsRouter struct {
-	logger  logmetrics.MetricsLogger
-	logsDir string
+	logger       logmetrics.MetricsLogger
+	logsFilename string
 }
 
 var (
@@ -20,10 +20,10 @@ var (
 	ErrRequestIDNotUUID  = errors.New("request_id is not a uuid")
 )
 
-func NewMetricsRouter(router *gin.RouterGroup, logger logmetrics.MetricsLogger, logsDir string) MetricsRouter {
+func NewMetricsRouter(router *gin.RouterGroup, logger logmetrics.MetricsLogger, logsFilename string) MetricsRouter {
 	r := MetricsRouter{
-		logger:  logger,
-		logsDir: logsDir,
+		logger:       logger,
+		logsFilename: logsFilename,
 	}
 	router.GET("/dump", r.DumpLogs)
 	router.GET("/metrics", gin.WrapH(metrics.GetHttpHandler()))
@@ -39,7 +39,7 @@ func NewMetricsRouter(router *gin.RouterGroup, logger logmetrics.MetricsLogger, 
 }
 
 func (r *MetricsRouter) DumpLogs(c *gin.Context) {
-	if err := r.logger.DumpLogs(r.logsDir); err != nil {
+	if err := r.logger.DumpLogs(r.logsFilename); err != nil {
 		panic(err.Error())
 	}
 }

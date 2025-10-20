@@ -16,20 +16,20 @@ services:
           cpus: "1.0"        
           memory: 1g         
     networks:
-      - test-network
+      - benchmark-gin-fiber-network
 
-  fiber-app:
-    hostname: apptest
-    build: ./apps/fiber-app
-    ports:
-      - "8080:8080"
-    healthcheck:
-      test: ["CMD", "curl", "-f", "http://localhost:8080/health"]
-      interval: 30s
-      timeout: 10s
-      retries: 3
-    networks:
-      - test-network
+  # fiber-app:
+  #   hostname: apptest
+  #   build: ./apps/fiber-app
+  #   ports:
+  #     - "8080:8080"
+  #   healthcheck:
+  #     test: ["CMD", "curl", "-f", "http://localhost:8080/health"]
+  #     interval: 30s
+  #     timeout: 10s
+  #     retries: 3
+  #   networks:
+  #     - benchmark-gin-fiber-network
 
   prometheus:
     container_name: test-prometheus
@@ -40,7 +40,7 @@ services:
     ports:
       - "9090:9090"
     networks:
-      - test-network
+      - benchmark-gin-fiber-network
 
   cadvisortest:
     image: gcr.io/cadvisor/cadvisor:latest
@@ -56,44 +56,19 @@ services:
       - /:/rootfs:ro
       - /var/run:/var/run:rw
       - /sys:/sys:ro
-      # - /var/lib/docker:/var/lib/docker:ro
+      - /var/lib/docker/:/var/lib/docker:ro
       - /dev/disk/:/dev/disk:ro
       - /etc/machine-id:/etc/machine-id:ro
       # - /mnt/windows_docker/:/rootfs/var/lib/docker:ro # особенность wsl
-      - /mnt/windows_docker:/var/lib/docker:ro
-      - /mnt/windows_docker:/rootfs/var/lib/docker:ro
+      - /mnt/windows_docker/:/var/lib/docker:ro
+      - /mnt/windows_docker/:/rootfs/var/lib/docker:ro
     networks:
-      - test-network
-
-      
-  # benchmark-runner:
-  #   build: ./benchmark 
-  #   volumes:
-  #     - ./results:/app/results
-  #   depends_on:
-  #     - gin-app
-  #     - fiber-app
-  #   environment:
-  #     - GIN_URL=http://gin-app:8080
-  #     - FIBER_URL=http://fiber-app:8080
-
-  # grafana:
-  #   image: grafana/grafana:latest
-  #   ports:
-  #     - "3000:3000"
-  #   environment:
-  #     - GF_SECURITY_ADMIN_PASSWORD=admin
-  #   volumes:
-  #     - grafana_data:/var/lib/grafana
-  #     - ./grafana/datasources:/etc/grafana/provisioning/datasources
-  #   depends_on:
-  #     - prometheus
+      - benchmark-gin-fiber-network
 
 networks:
-  test-network:
+  benchmark-gin-fiber-network:
     driver: bridge
-    name: test-network
+    # name: benchmark-gin-fiber-network
 
 volumes:
   prometheus_data:
-  grafana_data:

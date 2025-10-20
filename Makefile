@@ -31,6 +31,14 @@ down_cad:
 stop_all:
 	docker compose -f $(DC) stop
 
+.PHONY: run_all
+run_all:
+	docker compose -f $(DC) up --build -d
+
+.PHONY: down_all
+down_all:
+	docker compose -f $(DC) down -v 
+
 .PHONY: pandora
 pandora:
 	pandora ./requests/pandora_config/flat_ramp_up.yaml
@@ -46,7 +54,7 @@ gen_ammo:
 .PHONY: graph
 graph:
 	. myenv/bin/activate && \
-	python3 ./analize/analize.py && \
+	python3 ./analize/logs_analize.py && \
 	deactivate
 
 

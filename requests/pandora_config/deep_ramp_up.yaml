@@ -1,11 +1,11 @@
 pools:
-  - id: Flat-ramp-up
+  - id: Deep-ramp-up
     gun:
       type: http
       target: "localhost:8080"  # Ваш базовый URL
     ammo:
       type: http/json 
-      file: "./requests/ammo/flat_ammo.json"
+      file: "./requests/ammo/deep_ammo.json"
     result:
       type: phout
       destination: "./metrics_data/pandora_results/pandora.phout"
@@ -19,7 +19,6 @@ pools:
     startup:
       type: instance_step
       from: 10
-      to: 3000
+      to: 2000
       step: 100
       stepduration: 2s
-

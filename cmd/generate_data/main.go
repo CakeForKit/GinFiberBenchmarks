@@ -16,7 +16,7 @@ const (
 	HEIRARCHY_AMMO_FILENAME = "./requests/ammo/hierarchy_ammo.json"
 	DEEP_AMMO_FILENAME      = "./requests/ammo/deep_ammo.json"
 	count_different_ammo    = 5
-	levels_in_tree          = 7
+	levels_in_tree          = 6
 )
 
 func main() {

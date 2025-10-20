@@ -31,7 +31,7 @@ const (
 	// container_fs_reads_bytes_total = "container_fs_reads_bytes_total{name=\"deployment-gin-app-1\"} "
 )
 
-var save_json = true
+var save_json = false
 
 var (
 	metrics_save = []string{
@@ -169,20 +169,6 @@ func parseFloatVals(vals [][]interface{}) []metric {
 	return resultVals
 }
 
-// func parseValues(vals [][]interface{}) []metric {
-// 	resultVals := [][]int{}
-// 	for _, v := range vals {
-// 		timestamp := int(v[0].(float64))
-
-// 		metricVal, err := strconv.Atoi(v[1].(string))
-// 		if err != nil {
-// 			panic(err)
-// 		}
-// 		resultVals = append(resultVals, metric{Timestamp: timestamp, Val: metricVal})
-// 	}
-// 	return resultVals
-// }
-
 func saveMetrics(queryResponse PrometheusQueryRangeResponse, metricName string) error {
 	var resultVals []metric
 	if metricName == memory_allocations_bytes {
@@ -203,6 +189,13 @@ func saveMetrics(queryResponse PrometheusQueryRangeResponse, metricName string) 
 			}
 		}
 	} else {
+		switch metricName {
+		case container_cpu_usage_seconds_total:
+			metricName = "container_cpu_usage_seconds_total"
+		case container_memory_usage_bytes:
+			metricName = "container_memory_usage_bytes"
+		}
+
 		filename := fmt.Sprintf("./metrics_data/prometheus/%s.txt", metricName)
 		file, err := os.Create(filename)
 		if err != nil {

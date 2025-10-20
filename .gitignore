@@ -3,6 +3,7 @@ metrics_data
 prometheus-export
 myenv
 tmp
+analize/__pycache__/
 *.drawio.bkp
 *:Zone.Identifier
 allure-results

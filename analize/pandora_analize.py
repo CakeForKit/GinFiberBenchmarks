@@ -2,8 +2,7 @@ import matplotlib.pyplot as plt
 import pandas as pd
 import numpy as np
 import os
-from datetime import datetime
-
+from conf import TYPE_LOGS, DIRECTORY_METRICS
 '''
 1760781599.189	flat_request	2413	0	0	0	0	0	0	0	0	200
 временная метка (в формате Unix Epoch (количество секунд с 1 января 1970 года)) .189 — это миллисекунды.
@@ -11,7 +10,8 @@ from datetime import datetime
 2413 - Время ответа в миллисекундах.
 '''
 
-directoryLogs = "./metrics_data/save/"
+
+window = 150
 
 def parse_phout_files_in_dir(directory):
     """
@@ -20,11 +20,9 @@ def parse_phout_files_in_dir(directory):
     timestamp_response_dict = dict()
     
     for subdir in os.listdir(directory):
-        
-        # if subdir not in ['1', '2']:
-        #     continue
-        # print(subdir)
-        filepath = os.path.join(directory, subdir, "flat_results.phout")
+        if not subdir.isnumeric():
+            continue
+        filepath = os.path.join(directory, subdir, "pandora.phout")
         print(f"Обрабатывается файл: {filepath}")
         
         if os.path.isfile(filepath):
@@ -80,13 +78,12 @@ def parse_phout_file(filename: str, timestamp_responses_dict: dict):
 def plot_throughput_time_series(time_starts, throughputs, output_file=None):
     """Построение графика времени начала vs скорость обработки запросов"""
     plt.figure(figsize=(14, 8))
-    
     # Строим линейный график
     plt.plot(time_starts, throughputs, alpha=0.2, linewidth=1.5, color='blue', label='Скорость обработки')
     
     # Добавляем скользящее среднее для сглаживания
     if len(time_starts) > 10:
-        window_size = min(50, len(time_starts) // 10)
+        window_size = min(window, len(time_starts) // 10)
         df = pd.DataFrame({'time': time_starts, 'throughput': throughputs})
         df['moving_avg'] = df['throughput'].rolling(window=window_size, center=True).mean()
         
@@ -115,7 +112,7 @@ def plot_throughput_time_series(time_starts, throughputs, output_file=None):
         plt.savefig(output_file, dpi=300, bbox_inches='tight')
         print(f"График сохранен как {output_file}")
     
-    plt.show()
+    # plt.show()
 
 def print_throughput_statistics(time_starts, throughputs):
     """Вывод статистики по скорости обработки"""
@@ -144,21 +141,19 @@ def print_throughput_statistics(time_starts, throughputs):
 def main_throughput():
     """Основная функция для анализа скорости обработки"""
     try:
-        # Чтение и парсинг данных
-        time_starts, throughputs = parse_phout_files_in_dir(directoryLogs)
-        
-        if not time_starts:
-            print("Не найдено данных для построения графика")
-            return
-        
-        # Вывод статистики
-        # print_throughput_statistics(time_starts, throughputs)
-        
-        # Построение графиков
-        plot_throughput_time_series(time_starts, throughputs, "throughput_time_series.png")
+        for curTypeLogs in TYPE_LOGS:
+            dir = f"{DIRECTORY_METRICS}/{curTypeLogs}"
+
+            time_starts, throughputs = parse_phout_files_in_dir(dir)
+            if not time_starts:
+                print("Не найдено данных для построения графика")
+                return
+            
+            # print_throughput_statistics(time_starts, throughputs)
+            plot_throughput_time_series(time_starts, throughputs, f"./img/{curTypeLogs}/req_proc_plot.png")
         
     except FileNotFoundError:
-        print(f"Директория {directoryLogs} не найдена")
+        print(f"Директория не найдена")
     except Exception as e:
         print(f"Ошибка: {e}")
         import traceback
