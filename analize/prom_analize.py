@@ -56,6 +56,8 @@ def ParseFilesInDir(directory: str, shortFilename: str) -> List[float]:
     res_list = list()
     for subdir in os.listdir(directory):
         filepath = os.path.join(directory, subdir, shortFilename)
+        # if int(subdir) <= 2:
+        #     continue
         print(f"Обрабатывается файл: {filepath}")
 
         if os.path.isfile(filepath):

@@ -18,18 +18,20 @@ services:
     networks:
       - benchmark-gin-fiber-network
 
-  # fiber-app:
-  #   hostname: apptest
-  #   build: ./apps/fiber-app
-  #   ports:
-  #     - "8080:8080"
-  #   healthcheck:
-  #     test: ["CMD", "curl", "-f", "http://localhost:8080/health"]
-  #     interval: 30s
-  #     timeout: 10s
-  #     retries: 3
-  #   networks:
-  #     - benchmark-gin-fiber-network
+  fiber-app:
+    hostname: apptest
+    build:
+      context: ../
+      dockerfile: ./cmd/fiber_app/Dockerfile 
+    ports:
+      - "8080:8082"
+    deploy:
+      resources:
+        limits:
+          cpus: "1.0"        
+          memory: 1g  
+    networks:
+      - benchmark-gin-fiber-network
 
   prometheus:
     container_name: test-prometheus
@@ -52,6 +54,7 @@ services:
     privileged: true
     devices:
       - /dev/kmsg:/dev/kmsg
+    command: ["-logtostderr", "-v=4"]  # Включите детальные логи
     volumes:
       - /:/rootfs:ro
       - /var/run:/var/run:rw

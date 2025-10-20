@@ -13,12 +13,12 @@ pools:
     rps-per-instance: true
     rps:
       type: const
-      duration: 6s
-      ops: 10
+      duration: 20s
+      ops: 15
 
     startup:
       type: instance_step
-      from: 10
-      to: 2000
+      from: 100
+      to: 1000
       step: 100
-      stepduration: 2s
+      stepduration: 5s

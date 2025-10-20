@@ -25,7 +25,7 @@ const (
 	goroutines_count           = "goroutines_count"
 
 	// timestamp секнды загрузка процессора в процентах
-	container_cpu_usage_seconds_total = "rate(container_cpu_usage_seconds_total{name=\"deployment-gin-app-1\"}[1m])*100"
+	container_cpu_usage_seconds_total = "rate(container_cpu_usage_seconds_total{name=\"deployment-gin-app-1\"}[30s])*100"
 	// timestamp байты (екущее использование памяти в байтах
 	container_memory_usage_bytes = "container_memory_usage_bytes{name=\"deployment-gin-app-1\"}"
 	// container_fs_reads_bytes_total = "container_fs_reads_bytes_total{name=\"deployment-gin-app-1\"} "
@@ -101,7 +101,7 @@ func NewPrometheusExporter(prometheusURL, startTime, endTime, step string, maxWo
 }
 
 func (p *PrometheusExporter) GetAllMetrics() ([]string, error) {
-	log.Println("📋 Fetching list of all metrics...")
+	// log.Println("📋 Fetching list of all metrics...")
 
 	url := fmt.Sprintf("%s/api/v1/label/__name__/values", p.prometheusURL)
 
@@ -133,7 +133,7 @@ func (p *PrometheusExporter) GetAllMetrics() ([]string, error) {
 	metrics := labelResponse.Data
 	sort.Strings(metrics)
 
-	log.Printf("✅ Found %d metrics", len(metrics))
+	// log.Printf("✅ Found %d metrics", len(metrics))
 	return metrics, nil
 }
 
@@ -301,14 +301,14 @@ func (p *PrometheusExporter) ExportMetric(metricName string) *ExportResult {
 }
 
 func (p *PrometheusExporter) ExportAllMetrics() error {
-	all_metrics, err := p.GetAllMetrics()
-	if err != nil {
-		return fmt.Errorf("failed to get metrics list: %w", err)
-	}
-	fmt.Printf("all metrics: %v\n", all_metrics)
+	// all_metrics, err := p.GetAllMetrics()
+	// if err != nil {
+	// 	return fmt.Errorf("failed to get metrics list: %w", err)
+	// }
+	// fmt.Printf("all metrics: %v\n", all_metrics)
 	metrics := metrics_save
 	fmt.Printf("metrics save: %v\n", metrics)
-	log.Printf("🚀 Starting export of %d metrics with %d workers...", len(metrics), p.maxWorkers)
+	// log.Printf("🚀 Starting export of %d metrics with %d workers...", len(metrics), p.maxWorkers)
 
 	results := p.exportMetricsParallel(metrics)
 	// Статистика
@@ -328,10 +328,10 @@ func (p *PrometheusExporter) ExportAllMetrics() error {
 		}
 	}
 
-	log.Printf("\n📊 Export completed:")
-	log.Printf("   ✅ Success: %d", successCount)
-	log.Printf("   ⚠️  No data: %d", noDataCount)
-	log.Printf("   ❌ Errors:  %d", errorCount)
+	// log.Printf("\n📊 Export completed:")
+	// log.Printf("   ✅ Success: %d", successCount)
+	// log.Printf("   ⚠️  No data: %d", noDataCount)
+	// log.Printf("   ❌ Errors:  %d", errorCount)
 	log.Printf("   Time:  %s - %s", p.startTime, p.endTime)
 	return nil
 }
@@ -375,8 +375,8 @@ func main() {
 	)
 	flag.Parse()
 
-	log.Println("🚀 Prometheus Metrics Exporter")
-	log.Println(strings.Repeat("=", 50))
+	// log.Println("🚀 Prometheus Metrics Exporter")
+	// log.Println(strings.Repeat("=", 50))
 
 	exporter := NewPrometheusExporter(
 		*prometheusURL,

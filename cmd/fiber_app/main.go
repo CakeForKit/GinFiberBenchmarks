@@ -1,41 +1,42 @@
 package main
 
-// func main() {
-// 	config := cnfg.NewDefaultConfig()
-// 	simple, tree, wide := models.LoadTestData()
+import (
+	"encoding/json"
+	"fmt"
 
-// 	app := fiber.New(fiber.Config{
-// 		JSONEncoder: json.Marshal,
-// 		JSONDecoder: json.Unmarshal,
-// 	})
+	"github.com/CakeForKit/GinFiberBenchmarks.git/internal/cnfg"
+	fibertools "github.com/CakeForKit/GinFiberBenchmarks.git/internal/fiber_tools"
+	logmetrics "github.com/CakeForKit/GinFiberBenchmarks.git/internal/log_metrics"
+	"github.com/CakeForKit/GinFiberBenchmarks.git/internal/metrics"
+	"github.com/gofiber/fiber/v2"
+)
 
-// 	// Middleware для метрик
-// 	app.Use(func(c *fiber.Ctx) error {
-// 		start := time.Now()
-// 		err := c.Next()
-// 		duration := time.Since(start).Seconds()
+func main() {
+	conf := cnfg.NewDefaultConfig()
+	metrics.RegisterMetricCollector(conf.MetricsUpdateTimeMS)
+	logger := logmetrics.NewLogger()
 
-// 		fmt.Printf("METRIC: path=%s method=%s status=%d duration=%f\n",
-// 			c.Path(), c.Method(), c.Response().StatusCode(), duration)
-// 		return err
-// 	})
+	engine := fiber.New(fiber.Config{
+		JSONEncoder: json.Marshal,
+		JSONDecoder: json.Unmarshal,
+	})
+	engine.Use(fibertools.MetricMiddleware(logger, "/metrics", "/dump"))
+	apiGroup := engine.Group("/")
+	mRouter := fibertools.NewMetricsRouter(apiGroup, logger, conf.LogsFilename)
+	_ = mRouter
 
-// 	app.Get("/simple", func(c *fiber.Ctx) error {
-// 		return c.JSON(simple)
-// 	})
+	engine.Listen(fmt.Sprintf(":%d", conf.FiberPort))
+}
 
-// 	app.Get("/tree", func(c *fiber.Ctx) error {
-// 		return c.JSON(tree)
-// 	})
+/*
+введение
+моделирование
+керхова
 
-// 	app.Get("/wide", func(c *fiber.Ctx) error {
-// 		return c.JSON(wide)
-// 	})
+симметричные и блочные алгоритмы
+поточное шифрование
+энигма
+открытый ключа
+фон неймана
 
-// 	app.Get("/health", func(c *fiber.Ctx) error {
-// 		return c.JSON(fiber.Map{"status": "healthy"})
-// 	})
-
-// 	log.Printf("Fiber server starting on http://%s:%d", config.Host, config.FiberPort)
-// 	app.Listen(fmt.Sprintf(":%d", config.FiberPort))
-// }
+*/

@@ -11,6 +11,14 @@ run_gin_app:
 down_gin_app:
 	docker compose -f $(DC) down -v gin-app
 
+.PHONY: run_fiber_app
+run_fiber_app:
+	docker compose -f $(DC) up --build fiber-app -d
+
+.PHONY: down_fiber_app
+down_fiber_app:
+	docker compose -f $(DC) down -v fiber-app
+
 .PHONY: run_prom
 run_prom:
 	docker compose -f $(DC) up --build prometheus -d 
@@ -33,7 +41,7 @@ stop_all:
 
 .PHONY: run_all
 run_all:
-	docker compose -f $(DC) up --build -d
+	docker compose -f $(DC) up --build -d gin-app prometheus cadvisortest
 
 .PHONY: down_all
 down_all:
