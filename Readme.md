@@ -71,7 +71,87 @@
 | **Память в стеках** | ![ramp_up_flat](./img/ramp_up_flat/memory_allocations_bytes_stack.png) | ![ramp_up_deep](./img/ramp_up_deep/memory_allocations_bytes_stack.png) |
 | **Количество обработанных запросов** | ![ramp_up_flat](./img/ramp_up_flat/total_http_request_counter.png) | ![ramp_up_deep](./img/ramp_up_deep/total_http_request_counter.png) |
 
-<!-- ## Поиск точки деградации производительности 
+## Работа на максимальной допустимой нагрузке
+| Метрика | Плоский JSON | Древовидный JSON |
+|---------|-----------|-----------|
+| **Скорость сериализации** | ![high_flat](./img/high_flat/time_series_plot.png) | ![high_deep](./img/high_deep/time_series_plot.png) |
+| **Скорость обработки запросов** | ![high_flat](./img/high_flat/req_proc_plot.png) | ![high_deep](./img/high_deep/req_proc_plot.png) |
+| **Загрузка процессора (%)** | ![high_flat](./img/high_flat/cpu_usage_seconds_total.png) | ![high_deep](./img/high_deep/cpu_usage_seconds_total.png) |
+| **Количество горутин** | ![high_flat](./img/high_flat/goroutines_count.png) | ![high_deep](./img/high_deep/goroutines_count.png) |
+| **Потребление памяти контейнером** | ![high_flat](./img/high_flat/memory_usage_bytes.png) | ![high_deep](./img/high_deep/memory_usage_bytes.png) |
+| **Память в куче** | ![high_flat](./img/high_flat/memory_allocations_bytes_heap.png) | ![high_deep](./img/high_deep/memory_allocations_bytes_heap.png) |
+| **Память в стеках** | ![high_flat](./img/high_flat/memory_allocations_bytes_stack.png) | ![high_deep](./img/high_deep/memory_allocations_bytes_stack.png) |
+| **Количество обработанных запросов** | ![high_flat](./img/high_flat/total_http_request_counter.png) | ![high_deep](./img/high_deep/total_http_request_counter.png) |
+
+## Восстановление после перегруза
+| Метрика | Плоский JSON | Древовидный JSON |
+|---------|-----------|-----------|
+| **Скорость сериализации** | ![spike_flat](./img/spike_flat/time_series_plot.png) | ![spike_deep](./img/spike_deep/time_series_plot.png) |
+| **Скорость обработки запросов** | ![spike_flat](./img/spike_flat/req_proc_plot.png) | ![spike_deep](./img/spike_deep/req_proc_plot.png) |
+| **Загрузка процессора (%)** | ![spike_flat](./img/spike_flat/cpu_usage_seconds_total.png) | ![spike_deep](./img/spike_deep/cpu_usage_seconds_total.png) |
+| **Количество горутин** | ![spike_flat](./img/spike_flat/goroutines_count.png) | ![spike_deep](./img/spike_deep/goroutines_count.png) |
+| **Потребление памяти контейнером** | ![spike_flat](./img/spike_flat/memory_usage_bytes.png) | ![spike_deep](./img/spike_deep/memory_usage_bytes.png) |
+| **Память в куче** | ![spike_flat](./img/spike_flat/memory_allocations_bytes_heap.png) | ![spike_deep](./img/spike_deep/memory_allocations_bytes_heap.png) |
+| **Память в стеках** | ![spike_flat](./img/spike_flat/memory_allocations_bytes_stack.png) | ![spike_deep](./img/spike_deep/memory_allocations_bytes_stack.png) |
+| **Количество обработанных запросов** | ![spike_flat](./img/spike_flat/total_http_request_counter.png) | ![spike_deep](./img/spike_deep/total_http_request_counter.png) |
+
+
+# Настройка cAdvisor для WSL2
+**Проблема:** /var/lib/docker/ в случае wsl2 - пуст. Информация, которую ищет cadvisor, находится в файлах wsl: `\\wsl.localhost\docker-desktop\mnt\docker-desktop-disk\data\docker/`. Надо настроить доступ из ubuntu в файлам wsl.
+
+[Ссылка на issue](https://github.com/vacp2p/wakurtosis/issues/58)
+
+### Сделать при каждом запуске wsl2
+```bash
+./mount_docker.sh
+```
+или
+``` bash
+$ ls /mnt/
+c  e  wsl  wslg
+
+$ sudo mkdir /mnt/windows_docker
+# Docker Desktop должен работать
+$ sudo mount -t drvfs '\\wsl.localhost\docker-desktop\mnt\docker-desktop-disk\data\docker' /mnt/windows_docker
+```
+### docker compose
+```
+  cadvisortest:
+    image: gcr.io/cadvisor/cadvisor:latest
+    container_name: cadvisortest
+    hostname: cadvisortest
+    ports:
+      - "8081:8080" 
+    privileged: true
+    devices:
+      - /dev/kmsg:/dev/kmsg
+    volumes:
+      - /:/rootfs:ro
+      - /var/run:/var/run:rw
+      - /sys:/sys:ro
+      - /var/lib/docker:/var/lib/docker:ro
+      - /dev/disk/:/dev/disk:ro
+      - /etc/machine-id:/etc/machine-id:ro
+      - /mnt/windows_docker/:/rootfs/var/lib/docker:ro # особенность wsl
+    networks:
+      - test-network
+```
+
+<!-- container_cpu_usage_seconds_total{name="deployment-gin-app-1"}
+rate(container_cpu_usage_seconds_total{name="deployment-gin-app-1"}[1m])*100
+
+container_memory_usage_bytes{name="deployment-gin-app-1"}
+
+ 
+container_spec_memory_limit_bytes{name="deployment-gin-app-1"}
+container_memory_rss{name="deployment-gin-app-1"} 
+container_memory_cache{name="deployment-gin-app-1"} 
+
+container_fs_reads_bytes_total{name="deployment-gin-app-1"} 
+container_fs_writes_bytes_total{name="deployment-gin-app-1"}  -->
+  
+
+  <!-- ## Поиск точки деградации производительности 
 ### Плоский json-обьект
 #### Сокорость сериализации
 ![ramp_up_flat](./img/ramp_up_flat/time_series_plot.png)
@@ -122,70 +202,3 @@
 
 #### Количество обработанных запросов
 ![ramp_up_deep](./img/ramp_up_deep/total_http_request_counter.png) -->
-
-
-## Работа на максимальной допустимой нагрузке
-### Плоский json-обьект
-
-### Древовидный json-обьект
-
-## Восстановление после перегруза
-### Плоский json-обьект
-
-### Древовидный json-обьект
-
-
-# Настройка cAdvisor для WSL2
-**Проблема:** /var/lib/docker/ в случае wsl2 - пуст. Информация, которую ищет cadvisor, находится в файлах wsl: `\\wsl.localhost\docker-desktop\mnt\docker-desktop-disk\data\docker/`. Надо настроить доступ из ubuntu в файлам wsl.
-
-[Ссылка на issue](https://github.com/vacp2p/wakurtosis/issues/58)
-
-### Сделать при каждом запуске wsl2
-```bash
-./mount_docker.sh
-```
-или
-``` bash
-$ ls /mnt/
-c  e  wsl  wslg
-
-$ sudo mkdir /mnt/windows_docker
-# Docker Desktop должен работать
-$ sudo mount -t drvfs '\\wsl.localhost\docker-desktop\mnt\docker-desktop-disk\data\docker' /mnt/windows_docker
-```
-### docker compose
-```
-  cadvisortest:
-    image: gcr.io/cadvisor/cadvisor:latest
-    container_name: cadvisortest
-    hostname: cadvisortest
-    ports:
-      - "8081:8080" 
-    privileged: true
-    devices:
-      - /dev/kmsg:/dev/kmsg
-    volumes:
-      - /:/rootfs:ro
-      - /var/run:/var/run:rw
-      - /sys:/sys:ro
-      - /var/lib/docker:/var/lib/docker:ro
-      - /dev/disk/:/dev/disk:ro
-      - /etc/machine-id:/etc/machine-id:ro
-      - /mnt/windows_docker/:/rootfs/var/lib/docker:ro # особенность wsl
-    networks:
-      - test-network
-```
-
-container_cpu_usage_seconds_total{name="deployment-gin-app-1"}
-rate(container_cpu_usage_seconds_total{name="deployment-gin-app-1"}[1m])*100
-
-container_memory_usage_bytes{name="deployment-gin-app-1"}
-
- 
-container_spec_memory_limit_bytes{name="deployment-gin-app-1"}
-container_memory_rss{name="deployment-gin-app-1"} 
-container_memory_cache{name="deployment-gin-app-1"} 
-
-container_fs_reads_bytes_total{name="deployment-gin-app-1"} 
-container_fs_writes_bytes_total{name="deployment-gin-app-1"} 
-  
