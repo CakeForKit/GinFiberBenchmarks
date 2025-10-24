@@ -41,7 +41,7 @@ stop_all:
 
 .PHONY: run_all
 run_all:
-	docker compose -f $(DC) up --build -d gin-app prometheus cadvisortest
+	docker compose -f $(DC) up --build -d prometheus cadvisortest
 
 .PHONY: down_all
 down_all:

@@ -12,7 +12,7 @@ type Config struct {
 func NewDefaultConfig() *Config {
 	return &Config{
 		GinPort:             8080,
-		FiberPort:           8082,
+		FiberPort:           8080,
 		MetricsUpdateTimeMS: 1000,
 		LogsFilename:        "./metrics_data/logs/logs_time_series.txt",
 	}

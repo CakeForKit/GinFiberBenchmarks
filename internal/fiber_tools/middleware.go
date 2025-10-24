@@ -12,10 +12,8 @@ func MetricMiddleware(logger logmetrics.MetricsLogger, exceptPaths ...string) fi
 	return func(c *fiber.Ctx) error {
 		currentPath := c.Path()
 		if slices.Contains(exceptPaths, currentPath) {
-			c.Next()
-			return nil
+			return c.Next()
 		}
-
 		requestID := logger.CreateRequest()
 		logger.SetRequestPath(requestID, currentPath)
 		c.Locals("request_id", requestID)

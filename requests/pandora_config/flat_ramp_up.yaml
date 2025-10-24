@@ -2,7 +2,7 @@ pools:
   - id: Flat-ramp-up
     gun:
       type: http
-      target: "localhost:8080"  # Ваш базовый URL
+      target: "localhost:8080"  
     ammo:
       type: http/json 
       file: "./requests/ammo/flat_ammo.json"

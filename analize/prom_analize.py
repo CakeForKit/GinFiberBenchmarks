@@ -2,7 +2,7 @@ from typing import List
 import os
 import matplotlib.pyplot as plt
 import pandas as pd
-from conf import TYPE_LOGS, DIRECTORY_METRICS
+from conf import DIRECTORY_METRICS, GROUPS
 
 class MetricParams:
     def __init__(self, graph_label: str, outputFilename: str):
@@ -37,10 +37,7 @@ def ParseFile(filename: str, res_list: List[List[float]]):
             ir += 1
 
             for line in f:
-                line = f.readline().strip()
-                if line == '':
-                    continue
-                parts = line.split()
+                parts = line.strip().split()
                 assert(len(parts) == 2)
 
                 timestamp, metric = int(parts[0]), float(parts[1])
@@ -48,6 +45,7 @@ def ParseFile(filename: str, res_list: List[List[float]]):
                     res_list.append([])
                 res_list[ir].append(metric)
                 ir += 1
+        # print(f"ir = {ir}")
     except (ValueError, IndexError) as e:
         print(f"Ошибка парсинга строки: {line} {e}")
         raise
@@ -62,6 +60,7 @@ def ParseFilesInDir(directory: str, shortFilename: str) -> List[float]:
 
         if os.path.isfile(filepath):
             ParseFile(filepath, res_list)
+        print("res_list: ", len(res_list))
     
     # x = timestamp from 0, y = metric
     med_res = list()
@@ -70,20 +69,28 @@ def ParseFilesInDir(directory: str, shortFilename: str) -> List[float]:
 
     return med_res
 
-def Plot(med_res: List[float], graph_label: str, outputFilename):
-    timestamps = [i for i in range(len(med_res))]
-    metrics = [med_res[i] for i in timestamps]
+def AddGraph(time_starts, durations_ms, type, color1, color2):
+    # Создаем линейный график
+    # plt.plot(time_starts, durations_ms, alpha=0.2, linewidth=1.5, color=color1, label=f"{type}")
+    # Добавляем скользящее среднее для тренда
+    if len(time_starts) > 10:
+        window_size = min(window, len(time_starts) // 10)
+        df = pd.DataFrame({'time': time_starts, 'duration': durations_ms})
+        df = df.sort_values('time')
+        df['moving_avg'] = df['duration'].rolling(window=window_size, center=True).mean()
+        
+        plt.plot(df['time'], df['moving_avg'], color=color2, linewidth=2, 
+                label=f'{type} скользящее среднее (окно={window_size})')
 
-    plt.figure(figsize=(14, 8))
-    # Строим линейный график
-    plt.plot(timestamps, metrics, alpha=1, linewidth=1.5, color='blue', label=graph_label)
-    # # Добавляем скользящее среднее для сглаживания
-    # if len(timestamps) > 10:
-    #     window_size = min(window, len(timestamps) // 10)
-    #     df = pd.DataFrame({'x': timestamps, 'y': metrics})
-    #     df['moving_avg'] = df['y'].rolling(window=window_size, center=True).mean()
-    #     plt.plot(df['x'], df['moving_avg'], color='red', linewidth=2, 
-    #             label=f'Скользящее среднее (окно={window_size})')
+
+def Plot(fiber_med_res: List[float], gin_med_res: List[float], graph_label: str, outputFilename):
+    fiber_timestamps = [i for i in range(len(fiber_med_res))]
+    fiber_metrics = [fiber_med_res[i] for i in fiber_timestamps]
+    gin_timestamps = [i for i in range(len(gin_med_res))]
+    gin_metrics = [gin_med_res[i] for i in gin_timestamps]
+
+    AddGraph(fiber_timestamps, fiber_metrics, "fiber", 'blue', 'red')
+    AddGraph(gin_timestamps, gin_metrics, "gin", 'cyan', 'green')
     
     plt.xlabel('Время (секунды)', fontsize=12)
     plt.ylabel(graph_label, fontsize=12)
@@ -92,15 +99,20 @@ def Plot(med_res: List[float], graph_label: str, outputFilename):
     plt.legend()
 
     plt.savefig(outputFilename, dpi=300, bbox_inches='tight')
+    plt.close()
     print(f"График сохранен как {outputFilename}")
 
 def main_prom():
-    for curTypeLogs in TYPE_LOGS:
-        dir = f"{DIRECTORY_METRICS}/{curTypeLogs}"
-        for shortFilename, params in FILENAMES.items():
-            med_res = ParseFilesInDir(directory=dir, shortFilename=shortFilename)
-            if len(med_res) != 0:
-                Plot(med_res, params.graph_label, f"./img/{curTypeLogs}/{params.outputFilename}")
+    for shortFilename, params in FILENAMES.items():
+        for type, gr in GROUPS.items():
+            fiber_med_res = ParseFilesInDir(directory=f"{DIRECTORY_METRICS}/{gr[0]}", shortFilename=shortFilename)
+            gin_med_res = ParseFilesInDir(directory=f"{DIRECTORY_METRICS}/{gr[1]}", shortFilename=shortFilename)
+            os.makedirs(f"./img/{type}", exist_ok=True)
+            Plot(
+                fiber_med_res, 
+                gin_med_res,
+                params.graph_label + " " + type, f"./img/{type}/{params.outputFilename}")
+            
 
 if __name__ == '__main__':
     main_prom()

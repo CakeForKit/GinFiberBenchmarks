@@ -1,4 +1,16 @@
 
 
-TYPE_LOGS =  ["gin_flat_ramp_up", "gin_deep_ramp_up", "fiber_flat_ramp_up", "fiber_deep_ramp_up"] #  
+TYPE_LOGS =  [
+    # "fiber_ramp_up_deep", "fiber_ramp_up_flat", "gin_ramp_up_deep", "gin_ramp_up_flat",
+    "fiber_high_deep", "fiber_high_flat", "gin_high_deep", "gin_high_flat",
+] #  
+
+GROUPS = {
+    "high_deep": ["fiber_high_deep", "gin_high_deep"],
+    "high_flat": ["fiber_high_flat", "gin_high_flat"],
+    "ramp_up_deep": ["fiber_ramp_up_deep", "gin_ramp_up_deep"],
+    "ramp_up_flat": ["fiber_ramp_up_flat", "gin_ramp_up_flat"],
+    "spike_deep": ["fiber_spike_deep", "gin_spike_deep"],
+    "spike_flat": ["fiber_spike_flat", "gin_spike_flat"],
+}
 DIRECTORY_METRICS = "./metrics_data"

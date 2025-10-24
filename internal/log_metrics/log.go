@@ -39,6 +39,7 @@ func (l *loggerImpl) CreateRequest() uuid.UUID {
 		RequestID:          u,
 		SerializeStartTime: time.Time{},
 		SerializeEndTime:   time.Time{},
+		RequestPath:        "",
 	})
 	return u
 }
@@ -77,7 +78,7 @@ func (l *loggerImpl) SetRequestPath(requestID uuid.UUID, path string) error {
 }
 
 func (l *loggerImpl) DumpLogs(logsFilename string) (err error) {
-	var datalogs []SerializeMetric
+	datalogs := []SerializeMetric{}
 	err = nil
 	path := ""
 	l.logs.Range(func(key, value interface{}) bool {
@@ -86,7 +87,7 @@ func (l *loggerImpl) DumpLogs(logsFilename string) (err error) {
 			return true
 		}
 		if path != "" && path != obj.RequestPath {
-			err = fmt.Errorf("cмешение ручек в логе %s и %s", path, obj.RequestPath)
+			// err = fmt.Errorf("cмешение ручек в логе %s и %s", path, obj.RequestPath)
 			return true
 		}
 		path = obj.RequestPath
@@ -98,36 +99,18 @@ func (l *loggerImpl) DumpLogs(logsFilename string) (err error) {
 		datalogs = append(datalogs, toSave)
 		return true
 	})
+	fmt.Printf("logger: datalogs len = %d\n", len(datalogs))
 	if err != nil {
 		return err
 	}
-	l.logs.Clear()
 
 	if err := SaveStat(logsFilename, datalogs); err != nil {
 		return err
 	}
+	// очищаем sync.Map
+	l.logs.Range(func(key, value interface{}) bool {
+		l.logs.Delete(key)
+		return true
+	})
 	return
 }
-
-//	func (l *loggerImpl) DumpLogs(writer io.Writer) {
-//		l.logs.Range(func(key, value interface{}) bool {
-//			obj, ok := value.(*SerializeLogObject)
-//			if !ok {
-//				return true
-//			}
-//			toSave := ToSaveSerializeLogObject{
-//				SerializeStartTime: obj.SerializeStartTime,
-//				SerializeEndTime:   obj.SerializeEndTime,
-//				RequestPath:        obj.RequestPath,
-//			}
-//			jsonBytes, err := json.Marshal(toSave)
-//			if err != nil {
-//				return true
-//			}
-//			_, err = writer.Write(jsonBytes)
-//			if err != nil {
-//				return true
-//			}
-//			return true
-//		})
-//	}

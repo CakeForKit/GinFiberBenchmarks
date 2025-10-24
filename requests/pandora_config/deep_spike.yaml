@@ -5,15 +5,16 @@ pools:
       target: "localhost:8080"  # Ваш базовый URL
     ammo:
       type: http/json 
-      file: "./requests/ammo/flat_ammo.json"
+      file: "./requests/ammo/deep_ammo.json"
     result:
       type: phout
       destination: "./metrics_data/pandora_results/pandora.phout"
     discard_overflow: false # Клиенты ЖДУТ в очереди, если кассир не успевает
     rps-per-instance: true
+
     rps:
       type: const
-      duration: 20s
+      duration: 25s
       ops: 15
 
     startup:

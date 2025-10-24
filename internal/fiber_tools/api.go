@@ -2,6 +2,7 @@ package fibertools
 
 import (
 	"errors"
+	"fmt"
 
 	logmetrics "github.com/CakeForKit/GinFiberBenchmarks.git/internal/log_metrics"
 	"github.com/CakeForKit/GinFiberBenchmarks.git/internal/metrics"
@@ -43,6 +44,7 @@ func NewMetricsRouter(router fiber.Router, logger logmetrics.MetricsLogger, logs
 
 func (r *MetricsRouter) DumpLogs(c *fiber.Ctx) error {
 	if err := r.logger.DumpLogs(r.logsFilename); err != nil {
+		fmt.Printf("Error: %v\n", err)
 		return fiber.NewError(fiber.StatusInternalServerError, err.Error())
 	}
 	return c.SendStatus(fiber.StatusOK)

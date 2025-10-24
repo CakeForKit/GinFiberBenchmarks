@@ -2,40 +2,41 @@ import matplotlib.pyplot as plt
 import pandas as pd
 import numpy as np
 import os
-from conf import TYPE_LOGS, DIRECTORY_METRICS
+from conf import DIRECTORY_METRICS, GROUPS
 
-window = 50
+window = 100
 LOGS_SHORT_FILENAME = "logs_time_series.txt"
 
 def ParseFile(filename: str):
     """Парсинг файла с данными в формате timeStart duration"""
-
-    time_duration_dict = dict()
-    with open(filename, 'r') as f:
-        f.readline()
-        line = f.readline().strip()
-        assert(line)
-        parts = line.split()
-        assert(len(parts) >= 2)
-
-        prev_time_starts, sum_durations = float(parts[0]), float(parts[1])
-        cnt_in_one = 1
-
-        for line in f:
-            line = line.strip()
+    try:
+        time_duration_dict = dict()
+        with open(filename, 'r') as f:
+            f.readline()
+            line = f.readline().strip()
             assert(line)
             parts = line.split()
             assert(len(parts) >= 2)
 
-            time_start, duration = float(parts[0]), float(parts[1])
-            if time_start == prev_time_starts:
-                cnt_in_one += 1
-                sum_durations += duration
-            else:
-                time_duration_dict[prev_time_starts] = sum_durations / cnt_in_one
-                cnt_in_one = 1
-                prev_time_starts, sum_durations = time_start, duration
+            prev_time_starts, sum_durations = float(parts[0]), float(parts[1])
+            cnt_in_one = 1
 
+            for line in f:
+                line = line.strip()
+                assert(line)
+                parts = line.split()
+                assert(len(parts) >= 2)
+
+                time_start, duration = float(parts[0]), float(parts[1])
+                if time_start == prev_time_starts:
+                    cnt_in_one += 1
+                    sum_durations += duration
+                else:
+                    time_duration_dict[prev_time_starts] = sum_durations / cnt_in_one
+                    cnt_in_one = 1
+                    prev_time_starts, sum_durations = time_start, duration
+    except FileNotFoundError:
+        print(f"Файл {filename} не найден")
     return time_duration_dict
 
 
@@ -45,6 +46,7 @@ def ParseFilesInDir(directory):
         if not subdir.isnumeric():
             continue
         filepath = os.path.join(directory, subdir, LOGS_SHORT_FILENAME)
+        print(f"Обрабатывается файл: {filepath}")
 
         if os.path.isfile(filepath):
             time_duration_dict = ParseFile(filepath)
@@ -62,13 +64,9 @@ def ParseFilesInDir(directory):
 
     return time_starts, durations_ms
             
-
-
-def Plot(time_starts, durations_ms, output_file):
-    """Построение графика timeStart vs duration"""
-    plt.figure(figsize=(12, 8))
+def AddGraph(time_starts, durations_ms, type, color1, color2):
     # Создаем линейный график
-    plt.plot(time_starts, durations_ms, alpha=0.2, linewidth=1.5, color='blue', label='Измерения')
+    plt.plot(time_starts, durations_ms, alpha=0.2, linewidth=1.5, color=color1, label=f"{type}")
     # Добавляем скользящее среднее для тренда
     if len(time_starts) > 10:
         window_size = min(window, len(time_starts) // 10)
@@ -76,29 +74,36 @@ def Plot(time_starts, durations_ms, output_file):
         df = df.sort_values('time')
         df['moving_avg'] = df['duration'].rolling(window=window_size, center=True).mean()
         
-        plt.plot(df['time'], df['moving_avg'], color='red', linewidth=2, 
-                label=f'Скользящее среднее (окно={window_size})')
+        plt.plot(df['time'], df['moving_avg'], color=color2, linewidth=2, 
+                label=f'{type} скользящее среднее (окно={window_size})')
+
+def Plot(fiber_time_starts, fiber_durations_ms, gin_time_starts, gin_durations_ms, output_file, type):
+    """Построение графика timeStart vs duration"""
+    plt.figure(figsize=(12, 8))
+    AddGraph(fiber_time_starts, fiber_durations_ms, "fiber", 'blue', 'red')
+    AddGraph(gin_time_starts, gin_durations_ms, "gin", 'cyan', 'green')
     
-    plt.xlabel('Время начала (ms)', fontsize=12)
-    plt.ylabel('Длительность сериализации (us)', fontsize=12)
-    plt.title('Время сериализации', fontsize=14)
+    plt.xlabel('Время начала (мс)', fontsize=12)
+    plt.ylabel('Длительность сериализации (мкс)', fontsize=12)
+    plt.title(f'Время сериализации {type}', fontsize=14)
     plt.grid(True, alpha=0.3)
     plt.legend()
 
     plt.savefig(output_file, dpi=300, bbox_inches='tight')
+    plt.close()
     print(f"График сохранен как {output_file}")
     
 
 def main_logs():
     try:
-        for curTypeLogs in TYPE_LOGS:
-            dir = f"{DIRECTORY_METRICS}/{curTypeLogs}"
-            time_starts, durations_ms = ParseFilesInDir(dir)
-            if len(time_starts) == 0:
-                print("Не найдено данных для построения графика Лога")
-                return
-            # print_statistics(time_starts, durations_ms)
-            Plot(time_starts, durations_ms, f"./img/{curTypeLogs}/time_series_plot.png")
+        for title, gr in GROUPS.items():
+            fiber_time_starts, fiber_durations_ms = ParseFilesInDir(f"{DIRECTORY_METRICS}/{gr[0]}")
+            gin_time_starts, gin_durations_ms = ParseFilesInDir(f"{DIRECTORY_METRICS}/{gr[1]}")
+            os.makedirs(f"./img/{title}", exist_ok=True)
+            Plot(
+                fiber_time_starts, fiber_durations_ms, 
+                gin_time_starts, gin_durations_ms,
+                f"./img/{title}/time_series_plot.png", title)
         
     except FileNotFoundError:
         print(f"Файл ... не найден")

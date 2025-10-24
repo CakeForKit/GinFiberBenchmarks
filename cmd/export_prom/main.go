@@ -19,25 +19,23 @@ import (
 	"golang.org/x/sync/errgroup"
 )
 
+var save_json = false
+
 const (
 	total_http_request_counter = "total_http_request_counter"
 	memory_allocations_bytes   = "memory_allocations_bytes"
 	goroutines_count           = "goroutines_count"
-
-	// timestamp секнды загрузка процессора в процентах
-	container_cpu_usage_seconds_total = "rate(container_cpu_usage_seconds_total{name=\"deployment-gin-app-1\"}[30s])*100"
-	// timestamp байты (екущее использование памяти в байтах
-	container_memory_usage_bytes = "container_memory_usage_bytes{name=\"deployment-gin-app-1\"}"
-	// container_fs_reads_bytes_total = "container_fs_reads_bytes_total{name=\"deployment-gin-app-1\"} "
 )
 
-var save_json = false
+// timestamp секнды загрузка процессора в процентах
+func name_container_cpu_usage_seconds_total(container_name string) string {
+	return fmt.Sprintf("rate(container_cpu_usage_seconds_total{name=\"%s\"}[1m])*100", container_name) // "rate(container_cpu_usage_seconds_total{name=\"deployment-gin-app-1\"}[30s])*100"
+}
 
-var (
-	metrics_save = []string{
-		total_http_request_counter, memory_allocations_bytes, goroutines_count,
-		container_cpu_usage_seconds_total, container_memory_usage_bytes}
-)
+// timestamp байты (екущее использование памяти в байтах
+func name_container_memory_usage_bytes(container_name string) string {
+	return fmt.Sprintf("container_memory_usage_bytes{name=\"%s\"}", container_name) // "container_memory_usage_bytes{name=\"deployment-gin-app-1\"}"
+}
 
 type PrometheusExporter struct {
 	prometheusURL string
@@ -174,8 +172,6 @@ func saveMetrics(queryResponse PrometheusQueryRangeResponse, metricName string) 
 	if metricName == memory_allocations_bytes {
 		for i := range 2 {
 			filename := fmt.Sprintf("./metrics_data/prometheus/%s_%s.txt", metricName, queryResponse.Data.Result[i].Metric["type"])
-			fmt.Printf("filename:= %s\n", filename)
-
 			file, err := os.Create(filename)
 			if err != nil {
 				return fmt.Errorf("❌ Failed to create file for %s: %v", metricName, err)
@@ -189,10 +185,9 @@ func saveMetrics(queryResponse PrometheusQueryRangeResponse, metricName string) 
 			}
 		}
 	} else {
-		switch metricName {
-		case container_cpu_usage_seconds_total:
+		if strings.Contains(metricName, "container_cpu_usage_seconds_total") {
 			metricName = "container_cpu_usage_seconds_total"
-		case container_memory_usage_bytes:
+		} else if strings.Contains(metricName, "container_memory_usage_bytes") {
 			metricName = "container_memory_usage_bytes"
 		}
 
@@ -300,33 +295,28 @@ func (p *PrometheusExporter) ExportMetric(metricName string) *ExportResult {
 	return result
 }
 
-func (p *PrometheusExporter) ExportAllMetrics() error {
-	// all_metrics, err := p.GetAllMetrics()
-	// if err != nil {
-	// 	return fmt.Errorf("failed to get metrics list: %w", err)
-	// }
-	// fmt.Printf("all metrics: %v\n", all_metrics)
-	metrics := metrics_save
+func (p *PrometheusExporter) ExportAllMetrics(metrics_list []string) error {
+	metrics := metrics_list
 	fmt.Printf("metrics save: %v\n", metrics)
-	// log.Printf("🚀 Starting export of %d metrics with %d workers...", len(metrics), p.maxWorkers)
 
 	results := p.exportMetricsParallel(metrics)
-	// Статистика
-	successCount := 0
-	noDataCount := 0
-	errorCount := 0
+	_ = results
+	// // Статистика
+	// successCount := 0
+	// noDataCount := 0
+	// errorCount := 0
 
-	for _, result := range results {
-		log.Println(result.Message)
+	// for _, result := range results {
+	// 	log.Println(result.Message)
 
-		if result.Success {
-			successCount++
-		} else if !result.HasData && strings.Contains(result.Message, "No data") {
-			noDataCount++
-		} else {
-			errorCount++
-		}
-	}
+	// 	// if result.Success {
+	// 	// 	successCount++
+	// 	// } else if !result.HasData && strings.Contains(result.Message, "No data") {
+	// 	// 	noDataCount++
+	// 	// } else {
+	// 	// 	errorCount++
+	// 	// }
+	// }
 
 	// log.Printf("\n📊 Export completed:")
 	// log.Printf("   ✅ Success: %d", successCount)
@@ -367,11 +357,12 @@ func (p *PrometheusExporter) exportMetricsParallel(metrics []string) []*ExportRe
 // go run ./cmd/export_prom/main.go -start="1760796858" -end="1760796896"
 func main() {
 	var (
-		prometheusURL = flag.String("url", "http://localhost:9090", "Prometheus URL")
-		startTime     = flag.String("start", "0", "Start time (RFC3339 or Unix timestamp)")
-		endTime       = flag.String("end", "0", "End time (RFC3339 or Unix timestamp)")
-		step          = flag.String("step", "1s", "Query step duration")
-		workers       = flag.Int("workers", 5, "Number of parallel workers")
+		container_name = flag.String("container", "", "Container name")
+		prometheusURL  = flag.String("url", "http://localhost:9090", "Prometheus URL")
+		startTime      = flag.String("start", "0", "Start time (RFC3339 or Unix timestamp)")
+		endTime        = flag.String("end", "0", "End time (RFC3339 or Unix timestamp)")
+		step           = flag.String("step", "1s", "Query step duration")
+		workers        = flag.Int("workers", 5, "Number of parallel workers")
 	)
 	flag.Parse()
 
@@ -386,7 +377,11 @@ func main() {
 		*workers,
 	)
 
-	if err := exporter.ExportAllMetrics(); err != nil {
+	metrics_save := []string{
+		total_http_request_counter, memory_allocations_bytes, goroutines_count,
+		name_container_cpu_usage_seconds_total(*container_name), name_container_memory_usage_bytes(*container_name)}
+
+	if err := exporter.ExportAllMetrics(metrics_save); err != nil {
 		log.Fatalf("❌ Export failed: %v", err)
 	}
 }

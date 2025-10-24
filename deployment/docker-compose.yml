@@ -7,7 +7,9 @@ services:
     ports:
       - "8080:8080" 
     volumes:
-      - ../metrics_data:/app/metrics_data:rw  
+      - ../metrics_data/logs:/app/metrics_data/logs:rw  
+      - ../metrics_data/pandora_results:/app/metrics_data/pandora_results:rw  
+      - ../metrics_data/prometheus:/app/metrics_data/prometheus:rw  
     environment:
       - GIN_MODE=release
     deploy:
@@ -24,7 +26,11 @@ services:
       context: ../
       dockerfile: ./cmd/fiber_app/Dockerfile 
     ports:
-      - "8080:8082"
+      - "8080:8080"
+    volumes:
+      - ../metrics_data/logs:/app/metrics_data/logs:rw  
+      - ../metrics_data/pandora_results:/app/metrics_data/pandora_results:rw  
+      - ../metrics_data/prometheus:/app/metrics_data/prometheus:rw  
     deploy:
       resources:
         limits:
@@ -49,12 +55,12 @@ services:
     container_name: cadvisortest
     hostname: cadvisortest
     ports:
-      - "8081:8080" # 8081 - порт на хосте (вашей машине) 8080 - порт внутри контейнера
+      - "8081:8081" # 8081:8080 - 8081 - порт на хосте (вашей машине) 8080 - порт внутри контейнера
       # компьютер -> 8081 -> 8080 -> приложение на порту 8080
+    command: ["-port", "8081"]
     privileged: true
     devices:
       - /dev/kmsg:/dev/kmsg
-    command: ["-logtostderr", "-v=4"]  # Включите детальные логи
     volumes:
       - /:/rootfs:ro
       - /var/run:/var/run:rw
@@ -62,16 +68,15 @@ services:
       - /var/lib/docker/:/var/lib/docker:ro
       - /dev/disk/:/dev/disk:ro
       - /etc/machine-id:/etc/machine-id:ro
-      # - /mnt/windows_docker/:/rootfs/var/lib/docker:ro # особенность wsl
-      - /mnt/windows_docker/:/var/lib/docker:ro
-      - /mnt/windows_docker/:/rootfs/var/lib/docker:ro
+      - /mnt/windows_docker/:/var/lib/docker:ro # особенность wsl
+      - /mnt/windows_docker/:/rootfs/var/lib/docker:ro  # особенность wsl
     networks:
       - benchmark-gin-fiber-network
 
 networks:
   benchmark-gin-fiber-network:
     driver: bridge
-    # name: benchmark-gin-fiber-network
+    name: benchmark-gin-fiber-network
 
 volumes:
   prometheus_data:
