@@ -60,10 +60,13 @@
 
 ## Поиск точки деградации производительности 
 
+
 | Метрика | Плоский JSON | Древовидный JSON |
 |---------|-----------|-----------|
 | **Скорость сериализации** | ![ramp_up_flat](./img/ramp_up_flat/time_series_plot.png) | ![ramp_up_deep](./img/ramp_up_deep/time_series_plot.png) |
+| **Скорость сериализации по перцентелям** | ![ramp_up_flat](./img/ramp_up_flat/percentiles_time_series_plot.png) | ![ramp_up_deep](./img/ramp_up_deep/percentiles_time_series_plot.png) |
 | **Скорость обработки запросов** | ![ramp_up_flat](./img/ramp_up_flat/req_proc_plot.png) | ![ramp_up_deep](./img/ramp_up_deep/req_proc_plot.png) |
+| **Скорость обработки запросов по перцентелям** | ![ramp_up_flat](./img/ramp_up_flat/percentiles_req_proc_plot.png) | ![ramp_up_deep](./img/ramp_up_deep/percentiles_req_proc_plot.png) |
 | **Загрузка процессора (%)** | ![ramp_up_flat](./img/ramp_up_flat/cpu_usage_seconds_total.png) | ![ramp_up_deep](./img/ramp_up_deep/cpu_usage_seconds_total.png) |
 | **Количество горутин** | ![ramp_up_flat](./img/ramp_up_flat/goroutines_count.png) | ![ramp_up_deep](./img/ramp_up_deep/goroutines_count.png) |
 | **Потребление памяти контейнером** | ![ramp_up_flat](./img/ramp_up_flat/memory_usage_bytes.png) | ![ramp_up_deep](./img/ramp_up_deep/memory_usage_bytes.png) |
@@ -75,7 +78,9 @@
 | Метрика | Плоский JSON | Древовидный JSON |
 |---------|-----------|-----------|
 | **Скорость сериализации** | ![high_flat](./img/high_flat/time_series_plot.png) | ![high_deep](./img/high_deep/time_series_plot.png) |
+| **Скорость сериализации по перцентелям** | ![high_flat](./img/high_flat/percentiles_time_series_plot.png) | ![high_deep](./img/high_deep/percentiles_time_series_plot.png) |
 | **Скорость обработки запросов** | ![high_flat](./img/high_flat/req_proc_plot.png) | ![high_deep](./img/high_deep/req_proc_plot.png) |
+| **Скорость обработки запросов по перцентелям** | ![high_flat](./img/high_flat/percentiles_req_proc_plot.png) | ![high_deep](./img/ramp_up_deep/percentiles_req_proc_plot.png) |
 | **Загрузка процессора (%)** | ![high_flat](./img/high_flat/cpu_usage_seconds_total.png) | ![high_deep](./img/high_deep/cpu_usage_seconds_total.png) |
 | **Количество горутин** | ![high_flat](./img/high_flat/goroutines_count.png) | ![high_deep](./img/high_deep/goroutines_count.png) |
 | **Потребление памяти контейнером** | ![high_flat](./img/high_flat/memory_usage_bytes.png) | ![high_deep](./img/high_deep/memory_usage_bytes.png) |
@@ -87,7 +92,9 @@
 | Метрика | Плоский JSON | Древовидный JSON |
 |---------|-----------|-----------|
 | **Скорость сериализации** | ![spike_flat](./img/spike_flat/time_series_plot.png) | ![spike_deep](./img/spike_deep/time_series_plot.png) |
+| **Скорость сериализации по перцентелям** | ![spike_flat](./img/spike_flat/percentiles_time_series_plot.png) | ![spike_deep](./img/spike_deep/percentiles_time_series_plot.png) |
 | **Скорость обработки запросов** | ![spike_flat](./img/spike_flat/req_proc_plot.png) | ![spike_deep](./img/spike_deep/req_proc_plot.png) |
+| **Скорость обработки запросов по перцентелям** | ![spike_flat](./img/spike_flat/percentiles_req_proc_plot.png) | ![spike_deep](./img/ramp_up_deep/percentiles_req_proc_plot.png) |
 | **Загрузка процессора (%)** | ![spike_flat](./img/spike_flat/cpu_usage_seconds_total.png) | ![spike_deep](./img/spike_deep/cpu_usage_seconds_total.png) |
 | **Количество горутин** | ![spike_flat](./img/spike_flat/goroutines_count.png) | ![spike_deep](./img/spike_deep/goroutines_count.png) |
 | **Потребление памяти контейнером** | ![spike_flat](./img/spike_flat/memory_usage_bytes.png) | ![spike_deep](./img/spike_deep/memory_usage_bytes.png) |

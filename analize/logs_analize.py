@@ -146,7 +146,7 @@ def main_logs():
                 f"./img/{title}/time_series_plot.png", title)
             PlotPercentiles(
                 fiber_durations_ms, gin_durations_ms,
-                f"./img/{title}/percentiles_plot.png", title)
+                f"./img/{title}/percentiles_time_series_plot.png", title)
             
     except FileNotFoundError:
         print(f"Файл ... не найден")

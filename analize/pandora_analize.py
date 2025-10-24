@@ -12,6 +12,16 @@ from conf import DIRECTORY_METRICS, GROUPS
 
 
 window = 150
+IF_END = [False]
+end = 200000
+
+def parse_timestamp(timestamp: str) -> int:
+    if '.' in timestamp:
+        seconds, milliseconds = timestamp.split('.')
+        timestamp = int(seconds) * 1000 + int(milliseconds.ljust(3, '0')[:3])
+    else:
+        timestamp = int(timestamp) * 1000
+    return timestamp
 
 # return timestamp_response_dict[временная метка запроса отноистельно первого запроса] = длительности запросов пришедших в это время
 def parseFile(filename: str, timestamp_responses_dict: dict):    
@@ -21,18 +31,23 @@ def parseFile(filename: str, timestamp_responses_dict: dict):
             assert(line)
             parts = line.split('\t')
             assert(len(parts) >= 3)
-            start_timestamp, response_time_ms = int(parts[0].replace(".", "")), int(parts[2])
-            timestamp_responses_dict[0] = [response_time_ms]
+
+            start_timestamp, response_time_ms = parse_timestamp(parts[0]), int(parts[2])
+            if 0 not in timestamp_responses_dict.keys():
+                timestamp_responses_dict[0] = [response_time_ms]
+            else: 
+                timestamp_responses_dict[0].append(response_time_ms)
 
             for line in f:
                 line = line.strip()
                 assert(line)
                 parts = line.split('\t')
                 assert(len(parts) >= 3)
-                    
-                timestamp_ms = int(parts[0].replace(".", "")) - start_timestamp
-                response_time_ms = int(parts[2])
-                if timestamp_ms not in timestamp_responses_dict:
+
+                timestamp_ms, response_time_ms = parse_timestamp(parts[0]) - start_timestamp, int(parts[2])
+                if IF_END[0] and  timestamp_ms > end:
+                    continue
+                if timestamp_ms not in timestamp_responses_dict.keys():
                     timestamp_responses_dict[timestamp_ms] = [response_time_ms]
                 else:
                     timestamp_responses_dict[timestamp_ms].append(response_time_ms)         
@@ -50,13 +65,19 @@ def parseFilesInDir(directory):
         if os.path.isfile(filepath):
             parseFile(filepath, timestamp_response_dict)
     
+    sorted_times = sorted(timestamp_response_dict.keys())
+
+    # Для пропускной способности считаем количество запросов в секунду
+    # throughput = [0] * (max(sorted_times) - min(sorted_times))
+    # for i in sorted_times:
+    #     throughput[i] = len(timestamp_response_dict[i])
+
     for k, v in timestamp_response_dict.items():
         timestamp_response_dict[k] = sum(v) / len(v)
 
-    sorted_times = sorted(timestamp_response_dict.keys())
-    throughputs = [timestamp_response_dict[t] for t in sorted_times]
+    med_durations_ms = [timestamp_response_dict[t] for t in sorted_times]
     
-    return sorted_times, throughputs
+    return sorted_times, med_durations_ms 
 
 def addGraph(time_starts, durations_ms, type, color1, color2):
     # Создаем линейный график
@@ -70,7 +91,6 @@ def addGraph(time_starts, durations_ms, type, color1, color2):
         
         plt.plot(df['time'], df['moving_avg'], color=color2, alpha=0.8, linewidth=2, 
                 label=f'{type} скользящее среднее (окно={window_size})')
-
 
 def plot(fiber_time_starts, fiber_durations_ms, gin_time_starts, gin_durations_ms, output_file, type):
     plt.figure(figsize=(14, 8))
@@ -87,7 +107,46 @@ def plot(fiber_time_starts, fiber_durations_ms, gin_time_starts, gin_durations_m
     plt.close()
     print(f"График сохранен как {output_file}")
 
-def plot_throughput_percentiles(fiber_throughputs, gin_throughputs, output_file, type):
+'''
+def plot_throughput_histogram(fiber_time_starts, fiber_throughput, gin_time_starts, gin_throughput, output_file, type):
+    """Строит гистограмму количества обработанных запросов по секундам с заполнением нулями"""
+    plt.figure(figsize=(14, 8))
+
+    fiberLEN, ginLEN = len(fiber_throughput), len(gin_throughput)
+    commonLEN = max(fiberLEN, ginLEN)
+    if fiberLEN < ginLEN:
+        fiber_throughput += [0] * (ginLEN - fiberLEN)
+    else:
+        gin_throughput  += [0] * (fiberLEN - ginLEN)
+    common_times = [i for i in range(commonLEN)]
+    
+    bar_width = 0.1                     # Ширина столбцов
+    x_pos = np.arange(commonLEN)
+    
+    # Строим столбчатые диаграммы
+    plt.bar(x_pos - bar_width/2, fiber_throughput, width=bar_width, label='Fiber', color='blue', alpha=0.7)
+    plt.bar(x_pos + bar_width/2, gin_throughput, width=bar_width, label='Gin', color='green', alpha=0.7)
+    
+    # Настройка оси X для читаемости
+    if len(common_times) > 50:
+        # Показываем только каждую N-ю метку
+        step = max(1, len(common_times) // 20)
+        plt.xticks(x_pos[::step], common_times[::step], rotation=45)
+    else:
+        plt.xticks(x_pos, common_times, rotation=45)
+    
+    plt.xlabel('Время (секунды)', fontsize=12)
+    plt.ylabel('Количество обработанных запросов', fontsize=12)
+    plt.title(f'Throughput по секундам - {type}', fontsize=14)
+    plt.grid(True, alpha=0.3, axis='y')
+    plt.legend()
+    
+    plt.savefig(output_file, dpi=300, bbox_inches='tight')
+    plt.close()
+    print(f"Гистограмма throughput по секундам сохранена как {output_file}")
+'''
+
+def plot_duration_percentiles(fiber_durations_ms, gin_durations_ms, output_file, type):
     """Построение графика распределения скорости обработки по перцентилям"""
     plt.figure(figsize=(10, 6))
     
@@ -95,8 +154,8 @@ def plot_throughput_percentiles(fiber_throughputs, gin_throughputs, output_file,
     percentiles = [50, 75, 90, 95, 99]
     
     # Вычисляем перцентили для fiber и gin
-    fiber_percentiles = [np.percentile(fiber_throughputs, p) for p in percentiles]
-    gin_percentiles = [np.percentile(gin_throughputs, p) for p in percentiles]
+    fiber_percentiles = [np.percentile(fiber_durations_ms, p) for p in percentiles]
+    gin_percentiles = [np.percentile(gin_durations_ms, p) for p in percentiles]
     
     # Ширина столбцов
     bar_width = 0.35
@@ -131,6 +190,8 @@ def plot_throughput_percentiles(fiber_throughputs, gin_throughputs, output_file,
 def main_throughput():
     try:
         for title, gr in GROUPS.items():
+            IF_END[0] = False
+            if title == "ramp_up_deep" or title == "ramp_up_flat": IF_END[0] = True
             fiber_time_starts, fiber_durations_ms = parseFilesInDir(f"{DIRECTORY_METRICS}/{gr[0]}")
             gin_time_starts, gin_durations_ms = parseFilesInDir(f"{DIRECTORY_METRICS}/{gr[1]}")
             os.makedirs(f"./img/{title}", exist_ok=True)
@@ -138,9 +199,14 @@ def main_throughput():
                 fiber_time_starts, fiber_durations_ms, 
                 gin_time_starts, gin_durations_ms,
                 f"./img/{title}/req_proc_plot.png", title)
-            plot_throughput_percentiles(
+            # Гистограмма throughput
+            # plot_throughput_histogram(
+            #     fiber_time_starts, fiber_throughput, 
+            #     gin_time_starts, gin_throughput,
+            #     f"./img/{title}/throughput_histogram.png", title)
+            plot_duration_percentiles(
                 fiber_durations_ms, gin_durations_ms,
-                f"./img/{title}/throughput_percentiles_plot.png", title)
+                f"./img/{title}/percentiles_req_proc_plot.png", title)
             
     except FileNotFoundError:
         print(f"Директория не найдена")
