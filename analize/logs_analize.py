@@ -60,21 +60,21 @@ def ParseFilesInDir(directory):
         med_time_duration_dict[k] = sum(v) / len(v)
     
     time_starts = list(sorted(med_time_duration_dict.keys()))
-    durations_ms = [med_time_duration_dict[i] for i in time_starts]
+    durations_ms = [max(med_time_duration_dict[i], 0) for i in time_starts]
 
     return time_starts, durations_ms
             
 def AddGraph(time_starts, durations_ms, type, color1, color2):
     # Создаем линейный график
-    plt.plot(time_starts, durations_ms, alpha=0.2, linewidth=1.5, color=color1, label=f"{type}")
+    # plt.plot(time_starts, durations_ms, alpha=0.2, linewidth=1.5, color=color1, label=f"{type}")
     # Добавляем скользящее среднее для тренда
     if len(time_starts) > 10:
         window_size = min(window, len(time_starts) // 10)
         df = pd.DataFrame({'time': time_starts, 'duration': durations_ms})
         df = df.sort_values('time')
-        df['moving_avg'] = df['duration'].rolling(window=window_size, center=True).mean()
+        df['moving_avg'] = df['duration'].rolling(window=window_size, center=True).mean() 
         
-        plt.plot(df['time'], df['moving_avg'], color=color2, linewidth=2, 
+        plt.plot(df['time'], df['moving_avg'], color=color2, alpha=0.8, linewidth=2, 
                 label=f'{type} скользящее среднее (окно={window_size})')
 
 def Plot(fiber_time_starts, fiber_durations_ms, gin_time_starts, gin_durations_ms, output_file, type):
@@ -93,6 +93,46 @@ def Plot(fiber_time_starts, fiber_durations_ms, gin_time_starts, gin_durations_m
     plt.close()
     print(f"График сохранен как {output_file}")
     
+def PlotPercentiles(fiber_durations_ms, gin_durations_ms, output_file, type):
+    """Построение графика распределения по перцентилям"""
+    plt.figure(figsize=(10, 6))
+    
+    # Заданные перцентили
+    percentiles = [50, 75, 90, 95, 99]
+    
+    # Вычисляем перцентили для fiber и gin
+    fiber_percentiles = [np.percentile(fiber_durations_ms, p) for p in percentiles]
+    gin_percentiles = [np.percentile(gin_durations_ms, p) for p in percentiles]
+    
+    # Ширина столбцов
+    bar_width = 0.35
+    x_pos = np.arange(len(percentiles))
+    
+    # Создаем столбчатые диаграммы
+    plt.bar(x_pos - bar_width/2, fiber_percentiles, bar_width, 
+            label='Fiber', color='blue', alpha=0.7)
+    plt.bar(x_pos + bar_width/2, gin_percentiles, bar_width, 
+            label='Gin', color='green', alpha=0.7)
+    
+    # Настройки графика
+    plt.xlabel('Перцентили', fontsize=12)
+    plt.ylabel('Длительность сериализации (мкс)', fontsize=12)
+    plt.title(f'Распределение времени сериализации по перцентилям - {type}', fontsize=14)
+    plt.xticks(x_pos, [f'P{p}' for p in percentiles])
+    plt.grid(True, alpha=0.3, axis='y')
+    plt.legend()
+    
+    # Добавляем значения на столбцы
+    for i, (fiber_val, gin_val) in enumerate(zip(fiber_percentiles, gin_percentiles)):
+        plt.text(i - bar_width/2, fiber_val, f'{fiber_val:.1f}', 
+                ha='center', va='bottom', fontsize=9)
+        plt.text(i + bar_width/2, gin_val, f'{gin_val:.1f}', 
+                ha='center', va='bottom', fontsize=9)
+    
+    plt.tight_layout()
+    plt.savefig(output_file, dpi=300, bbox_inches='tight')
+    plt.close()
+    print(f"График перцентилей сохранен как {output_file}")
 
 def main_logs():
     try:
@@ -104,7 +144,10 @@ def main_logs():
                 fiber_time_starts, fiber_durations_ms, 
                 gin_time_starts, gin_durations_ms,
                 f"./img/{title}/time_series_plot.png", title)
-        
+            PlotPercentiles(
+                fiber_durations_ms, gin_durations_ms,
+                f"./img/{title}/percentiles_plot.png", title)
+            
     except FileNotFoundError:
         print(f"Файл ... не найден")
     except Exception as e:

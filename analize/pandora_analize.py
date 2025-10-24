@@ -60,7 +60,7 @@ def parseFilesInDir(directory):
 
 def addGraph(time_starts, durations_ms, type, color1, color2):
     # Создаем линейный график
-    plt.plot(time_starts, durations_ms, alpha=0.2, linewidth=1.5, color=color1, label=f"{type}")
+    # plt.plot(time_starts, durations_ms, alpha=0.2, linewidth=1.5, color=color1, label=f"{type}")
     # Добавляем скользящее среднее для тренда
     if len(time_starts) > 10:
         window_size = min(window, len(time_starts) // 10)
@@ -68,7 +68,7 @@ def addGraph(time_starts, durations_ms, type, color1, color2):
         df = df.sort_values('time')
         df['moving_avg'] = df['duration'].rolling(window=window_size, center=True).mean()
         
-        plt.plot(df['time'], df['moving_avg'], color=color2, linewidth=2, 
+        plt.plot(df['time'], df['moving_avg'], color=color2, alpha=0.8, linewidth=2, 
                 label=f'{type} скользящее среднее (окно={window_size})')
 
 
@@ -83,19 +83,50 @@ def plot(fiber_time_starts, fiber_durations_ms, gin_time_starts, gin_durations_m
     plt.grid(True, alpha=0.3)
     plt.legend()
     
-    # Добавляем статистику на график
-    # stats_text = f'Всего временных точек: {len(time_starts)}\n'
-    # stats_text += f'Макс. скорость: {max(throughputs):.0f} запр/сек\n'
-    # stats_text += f'Ср. скорость: {np.mean(throughputs):.1f} запр/сек\n'
-    # stats_text += f'Мин. скорость: {min(throughputs):.0f} запр/сек'
-    # plt.annotate(stats_text, xy=(0.02, 0.98), xycoords='axes fraction',
-    #             bbox=dict(boxstyle="round,pad=0.3", facecolor="white", alpha=0.8),
-    #             verticalalignment='top', fontsize=10)
-    # plt.tight_layout()
-    
     plt.savefig(output_file, dpi=300, bbox_inches='tight')
     plt.close()
     print(f"График сохранен как {output_file}")
+
+def plot_throughput_percentiles(fiber_throughputs, gin_throughputs, output_file, type):
+    """Построение графика распределения скорости обработки по перцентилям"""
+    plt.figure(figsize=(10, 6))
+    
+    # Заданные перцентили
+    percentiles = [50, 75, 90, 95, 99]
+    
+    # Вычисляем перцентили для fiber и gin
+    fiber_percentiles = [np.percentile(fiber_throughputs, p) for p in percentiles]
+    gin_percentiles = [np.percentile(gin_throughputs, p) for p in percentiles]
+    
+    # Ширина столбцов
+    bar_width = 0.35
+    x_pos = np.arange(len(percentiles))
+    
+    # Создаем столбчатые диаграммы
+    plt.bar(x_pos - bar_width/2, fiber_percentiles, bar_width, 
+            label='Fiber', color='blue', alpha=0.7)
+    plt.bar(x_pos + bar_width/2, gin_percentiles, bar_width, 
+            label='Gin', color='green', alpha=0.7)
+    
+    # Настройки графика
+    plt.xlabel('Перцентили', fontsize=12)
+    plt.ylabel('Скорость обработки (запросов/мкс)', fontsize=12)
+    plt.title(f'Распределение скорости обработки по перцентилям - {type}', fontsize=14)
+    plt.xticks(x_pos, [f'P{p}' for p in percentiles])
+    plt.grid(True, alpha=0.3, axis='y')
+    plt.legend()
+    
+    # Добавляем значения на столбцы
+    for i, (fiber_val, gin_val) in enumerate(zip(fiber_percentiles, gin_percentiles)):
+        plt.text(i - bar_width/2, fiber_val, f'{fiber_val:.1f}', 
+                ha='center', va='bottom', fontsize=9)
+        plt.text(i + bar_width/2, gin_val, f'{gin_val:.1f}', 
+                ha='center', va='bottom', fontsize=9)
+    
+    plt.tight_layout()
+    plt.savefig(output_file, dpi=300, bbox_inches='tight')
+    plt.close()
+    print(f"График перцентилей скорости сохранен как {output_file}")
 
 def main_throughput():
     try:
@@ -107,6 +138,9 @@ def main_throughput():
                 fiber_time_starts, fiber_durations_ms, 
                 gin_time_starts, gin_durations_ms,
                 f"./img/{title}/req_proc_plot.png", title)
+            plot_throughput_percentiles(
+                fiber_durations_ms, gin_durations_ms,
+                f"./img/{title}/throughput_percentiles_plot.png", title)
             
     except FileNotFoundError:
         print(f"Директория не найдена")
