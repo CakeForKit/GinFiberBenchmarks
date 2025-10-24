@@ -1,7 +1,7 @@
 #!/bin/bash
 
 cd "$(dirname "$0")/.."
-first=1
+first=5
 cnt=100
 # rm -rf ./metrics_data/fiber_high_deep/* ./metrics_data/fiber_high_flat/* ./metrics_data/gin_high_deep/* ./metrics_data/gin_high_flat/*
 
